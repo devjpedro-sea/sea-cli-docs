@@ -1,0 +1,15 @@
+{
+  "title": "Documentação",
+  "pages": [
+    "index",
+    "getting-started",
+    "guides",
+    "features",
+    "cli-reference",
+    "api-reference",
+    "workflows",
+    "advanced",
+    "faq",
+    "changelog"
+  ]
+}

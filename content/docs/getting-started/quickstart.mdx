@@ -1,0 +1,249 @@
+---
+title: Quickstart
+description: Comece a usar o SEA CLI em menos de 5 minutos
+---
+
+# Quickstart - Início Rápido
+
+Este guia irá te ajudar a usar o SEA CLI pela primeira vez em menos de 5 minutos!
+
+<Callout type="info">
+  **Já instalou o SEA CLI?** Se não, siga o [guia de
+  instalação](/docs/getting-started/installation) primeiro.
+</Callout>
+
+## Modo Interativo (Recomendado)
+
+A forma mais fácil de começar é usando o modo interativo:
+
+```bash
+sea-cli init
+```
+
+Você verá um menu bonito com estas opções:
+
+```
+SEA CLI - Menu Interativo
+
+? O que você deseja fazer?
+  ❯ Criar novo workspace Liferay
+    Adicionar em workspace existente
+    Criar módulo client extension
+    Criar novo módulo Liferay
+    Configurar Turborepo
+```
+
+Use as **setas ↑↓** para navegar e **Enter** para selecionar.
+
+## Cenário 1: Criar Novo Workspace
+
+Perfeito para começar um **projeto do zero**.
+
+<Steps>
+### Execute o comando
+
+```bash
+sea-cli create-workspace meu-projeto-liferay
+```
+
+Ou use o modo interativo e escolha "Criar novo workspace Liferay"
+
+### Aguarde o processo
+
+O SEA CLI irá:
+
+- Clonar template base
+- Instalar dependências
+- Configurar ESLint + Prettier
+- Configurar Husky + lint-staged
+- Configurar Jest + Testing Library
+- Adicionar scripts de automação
+
+### Acesse o workspace
+
+```bash
+cd meu-projeto-liferay
+```
+
+### Teste as configurações
+
+```bash
+# Validar e formatar código
+npm run lint
+
+# Executar testes
+npm test
+
+# Ver cobertura de testes
+npm run test:coverage
+```
+
+</Steps>
+
+## Cenário 2: Adicionar em Workspace Existente
+
+Já tem um workspace Liferay? Adicione qualidade de código nele!
+
+<Steps>
+### Entre no workspace
+
+```bash
+cd /caminho/para/seu/workspace-liferay
+```
+
+### Execute o setup
+
+```bash
+sea-cli setup
+```
+
+### Escolha as features
+
+O CLI irá perguntar quais features você deseja:
+
+```
+? Selecione as features para instalar:
+  ◉ ESLint + Prettier
+  ◉ Husky + lint-staged
+  ◉ Jest + Testing Library
+  ◉ Scripts de Automação
+  ◯ Regras Sonar
+```
+
+Use **Espaço** para marcar/desmarcar e **Enter** para confirmar.
+
+### Confirme sobrescrita (se necessário)
+
+Se já existirem configurações, o CLI perguntará se deseja sobrescrever.
+
+### Pronto!
+
+Seu workspace agora tem todas as configurações de qualidade!
+
+</Steps>
+
+## Cenário 3: Criar Novo Módulo
+
+Dentro de um workspace configurado, crie módulos pré-configurados:
+
+<Steps>
+### Entre na pasta modules
+
+```bash
+cd seu-workspace/modules
+```
+
+### Crie o módulo
+
+```bash
+sea-cli create-module
+```
+
+### Informe o nome
+
+```
+? Nome do módulo: meu-novo-modulo
+```
+
+### Módulo criado!
+
+O módulo já vem com package.json, configuração de lint, configuração de testes e scripts de build/deploy para Liferay.
+
+</Steps>
+
+## Workflow Completo
+
+Veja um exemplo de workflow completo do dia a dia:
+
+```bash
+# 1. Criar workspace
+sea-cli create-workspace projeto-cliente
+cd projeto-cliente
+
+# 2. Criar módulo
+cd modules
+sea-cli create-module
+# Nome: custom-portlet
+
+# 3. Desenvolver
+cd custom-portlet
+# ... editar código ...
+
+# 4. Testar durante desenvolvimento
+npm test -- --watch
+
+# 5. Validar código
+npm run lint
+
+# 6. Fazer commit (Husky valida automaticamente!)
+git add .
+git commit -m "feat: nova funcionalidade"
+
+# 7. Build e Deploy para Liferay
+npm run liferay:build
+```
+
+## 📊 Estrutura Gerada
+
+Após criar um workspace, você terá:
+
+```
+meu-projeto-liferay/
+├── .husky/                    # Hooks do Git
+│   └── pre-commit            # Validação antes de commits
+├── modules/                   # Seus módulos Liferay
+├── .eslintrc.js              # Configuração do ESLint
+├── .prettierrc.js            # Configuração do Prettier
+├── jest.config.js            # Configuração do Jest
+├── package.json              # Scripts e dependências
+└── README.md
+```
+
+## Comandos Úteis
+
+### Na raiz do workspace
+
+```bash
+npm run lint              # Valida e formata todo o workspace
+npm run lint:format       # Apenas formata com Prettier
+npm run lint:fix          # Apenas valida com ESLint
+npm test                  # Roda todos os testes
+npm run test:coverage     # Testes com relatório de cobertura
+npm run test:watch        # Modo watch para desenvolvimento
+```
+
+### Em cada módulo
+
+```bash
+npm run lint              # Lint apenas deste módulo
+npm test                  # Testa apenas este módulo
+npm run liferay:build     # Build + Deploy automático
+npm run liferay:deploy    # Deploy sem rebuild
+```
+
+## Dicas Rápidas
+
+<Callout type="tip">
+  ### Boas Práticas - Use `sea-cli init` para descobrir funcionalidades -
+  Execute `npm run lint` antes de commitar (ou deixe o Husky fazer isso!) - Rode
+  `npm test` frequentemente durante o desenvolvimento - Use `npm run
+  test:coverage` para verificar cobertura de testes
+</Callout>
+
+## Precisa de Ajuda?
+
+- 📖 Veja os [Guias Detalhados](/docs/guides/create-workspace)
+- Consulte a [Referência CLI](/docs/cli-reference/init)
+- ❓ Confira o [FAQ](/docs/faq/common-issues)
+- [Troubleshooting](/docs/getting-started/troubleshooting)
+
+## Próximos Passos
+
+Agora que você já sabe o básico:
+
+- Explore todos os [Guias](/docs/guides/create-workspace)
+- Conheça as [Features](/docs/features/eslint-prettier)
+- Aprenda sobre [Workflows](/docs/workflows/development-workflow)
+- Configure [Turborepo](/docs/guides/configure-turborepo)
+
+**Bom desenvolvimento\*\***

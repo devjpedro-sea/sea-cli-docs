@@ -1,0 +1,373 @@
+---
+title: Troubleshooting
+description: Soluções para problemas comuns de instalação e uso
+---
+
+# Troubleshooting
+
+Encontrou algum problema? Aqui estão as soluções para os problemas mais comuns.
+
+## 🔐 Problemas de Autenticação
+
+### Erro: 401 Unauthorized
+
+**Sintoma:**
+
+```
+npm ERR! 401 Unauthorized - GET https://gitlab.seatecnologia.com.br/...
+```
+
+**Soluções:**
+
+<Steps>
+### Verificar se o token está configurado
+
+```bash
+npm config get -- '//gitlab.seatecnologia.com.br/api/v4/packages/npm/:_authToken'
+```
+
+### Reconfigurar o token
+
+```bash
+npm config set -- '//gitlab.seatecnologia.com.br/api/v4/packages/npm/:_authToken' "SEU_TOKEN"
+```
+
+### Verificar se o token tem escopo `api`
+
+Acesse o GitLab e verifique se o token tem permissões corretas.
+
+</Steps>
+
+### Token Expirado
+
+**Sintoma:** Instalação funcionava antes, agora dá erro 401.
+
+**Solução:**
+
+1. Gerar novo token no GitLab
+2. Reconfigurar no NPM
+3. Tentar instalar novamente
+
+## Problemas de Instalação
+
+### Erro: Command not found
+
+**Sintoma:**
+
+```bash
+sea-cli: command not found
+```
+
+**Soluções:**
+
+<Callout type="warn">O pacote pode não ter sido instalado globalmente.</Callout>
+
+```bash
+# Reinstalar globalmente
+npm i -g @sea-quality-code/sea-cli
+
+# Verificar instalação
+which sea-cli
+
+# Se ainda não funcionar, verificar PATH
+echo $PATH
+```
+
+### Erro de Permissão
+
+**Sintoma:**
+
+```
+EACCES: permission denied
+```
+
+**Soluções:**
+
+```bash
+# Linux/Mac: Usar sudo (não recomendado)
+sudo npm i -g @sea-quality-code/sea-cli
+
+# OU configurar diretório npm global (recomendado)
+mkdir ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+
+# Agora instalar sem sudo
+npm i -g @sea-quality-code/sea-cli
+```
+
+### Versão do Node Incompatível
+
+**Sintoma:**
+
+```
+Error: The engine "node" is incompatible with this module
+```
+
+**Solução:**
+
+```bash
+# Verificar versão atual
+node --version
+
+# Se menor que v16, atualizar Node.js
+# Baixar de: https://nodejs.org
+# OU usar nvm:
+nvm install 16
+nvm use 16
+```
+
+## Problemas de Execução
+
+### Comando Trava/Não Responde
+
+**Sintoma:** O comando `sea-cli` não retorna nada.
+
+**Soluções:**
+
+1. Verificar conexão com internet
+2. Verificar acesso ao GitLab
+3. Tentar com flag de debug:
+
+```bash
+DEBUG=* sea-cli init
+```
+
+### Erro ao Clonar Repositório
+
+**Sintoma:**
+
+```
+Error: Failed to clone repository
+```
+
+**Soluções:**
+
+<Steps>
+### Verificar acesso ao GitLab
+
+Tentar clonar manualmente:
+
+```bash
+git clone https://gitlab.seatecnologia.com.br/...
+```
+
+### Configurar credenciais Git
+
+```bash
+git config --global user.name "Seu Nome"
+git config --global user.email "seu@email.com"
+```
+
+### Verificar SSH (se usar SSH)
+
+```bash
+ssh -T git@gitlab.seatecnologia.com.br
+```
+
+</Steps>
+
+## Problemas de Configuração
+
+### ESLint Não Funciona
+
+**Sintoma:** ESLint não detecta erros.
+
+**Soluções:**
+
+```bash
+# Verificar se ESLint está instalado
+npm list eslint
+
+# Reinstalar dependências
+npm install
+
+# Verificar arquivo .eslintrc.js
+cat .eslintrc.js
+```
+
+### Husky Não Executa
+
+**Sintoma:** Pre-commit hook não valida código.
+
+**Soluções:**
+
+```bash
+# Reinstalar Husky
+npx husky install
+
+# Dar permissão ao hook
+chmod +x .husky/pre-commit
+
+# Testar manualmente
+.husky/pre-commit
+```
+
+### Testes Não Executam
+
+**Sintoma:**
+
+```
+No tests found
+```
+
+**Soluções:**
+
+```bash
+# Verificar configuração do Jest
+cat jest.config.js
+
+# Verificar se há arquivos de teste
+find . -name "*.test.js"
+
+# Executar com mais detalhes
+npm test -- --verbose
+```
+
+## Problemas com Workspace
+
+### Módulos Não Detectados
+
+**Sintoma:** SEA CLI não encontra módulos React.
+
+**Soluções:**
+
+```bash
+# Verificar estrutura de pastas
+ls -la modules/
+
+# Executar scan manual
+cd modules
+find . -name "package.json"
+```
+
+### Build do Liferay Falha
+
+**Sintoma:**
+
+```
+Error: Liferay build failed
+```
+
+**Soluções:**
+
+<Callout type="warn">
+  Certifique-se de ter o ambiente Liferay configurado.
+</Callout>
+
+```bash
+# Verificar se Gradle está disponível
+./gradlew --version
+
+# Limpar cache
+./gradlew clean
+
+# Rebuild
+./gradlew build
+```
+
+## Problemas de Rede
+
+### Timeout ao Instalar Dependências
+
+**Sintoma:**
+
+```
+npm ERR! network timeout
+```
+
+**Soluções:**
+
+```bash
+# Aumentar timeout
+npm config set fetch-timeout 60000
+
+# Usar registro alternativo (temporariamente)
+npm config set registry https://registry.npmjs.org/
+
+# Limpar cache
+npm cache clean --force
+```
+
+### Proxy/Firewall
+
+**Sintoma:** Não consegue baixar pacotes.
+
+**Soluções:**
+
+```bash
+# Configurar proxy
+npm config set proxy http://proxy.company.com:8080
+npm config set https-proxy http://proxy.company.com:8080
+
+# OU desabilitar SSL (não recomendado para produção)
+npm config set strict-ssl false
+```
+
+## Reportar Problemas
+
+Se nenhuma solução acima funcionou:
+
+<Steps>
+### Coletar informações
+
+```bash
+# Versão do SEA CLI
+sea-cli --version
+
+# Versão do Node
+node --version
+
+# Versão do NPM
+npm --version
+
+# Sistema operacional
+uname -a  # Linux/Mac
+ver       # Windows
+```
+
+### Executar com debug
+
+```bash
+DEBUG=* sea-cli [comando] > debug.log 2>&1
+```
+
+### Contatar suporte
+
+Email, GitLab Issues ou incluir log de debug e informações do sistema para análise.
+
+</Steps>
+
+## Checklist de Diagnóstico
+
+Use este checklist para diagnosticar problemas:
+
+- [ ] Node.js versão ≥ 16.0.0?
+- [ ] NPM instalado?
+- [ ] Token configurado corretamente?
+- [ ] Registry configurado?
+- [ ] SEA CLI instalado globalmente?
+- [ ] Comando `sea-cli` funciona?
+- [ ] Acesso ao GitLab?
+- [ ] Conexão com internet estável?
+- [ ] Permissões de escrita no diretório?
+
+## Dicas de Prevenção
+
+<Callout type="tip">
+  ### Evite Problemas Futuros - Mantenha Node.js atualizado - Guarde seu token
+  em local seguro - Documente configurações específicas do projeto - Faça backup
+  de arquivos de configuração - Use controle de versão (Git)
+</Callout>
+
+## Links Úteis
+
+- [Documentação do NPM](https://docs.npmjs.com/)
+- [Node.js Downloads](https://nodejs.org/)
+- [GitLab SEA Tecnologia](https://gitlab.seatecnologia.com.br)
+- [FAQ](/docs/faq/common-issues)
+
+---
+
+**Ainda com problemas?** Consulte o [FAQ](/docs/faq/common-issues) ou entre em contato com o suporte.

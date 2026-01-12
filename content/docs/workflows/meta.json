@@ -1,0 +1,9 @@
+{
+  "title": "Workflows",
+  "pages": [
+    "development-workflow",
+    "testing-workflow",
+    "deployment-workflow",
+    "ci-cd"
+  ]
+}

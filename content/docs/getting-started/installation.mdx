@@ -1,0 +1,133 @@
+---
+title: Instalação
+description: Como instalar e configurar o SEA CLI
+---
+
+# Instalação do SEA CLI
+
+Este guia detalha todos os passos necessários para instalar o SEA CLI no seu ambiente de desenvolvimento.
+
+## Pré-requisitos
+
+Antes de instalar o SEA CLI, certifique-se de ter:
+
+<Callout type="warn">
+  ### Requisitos Obrigatórios - **Node.js** versão 16.0.0 ou superior - **NPM**
+  (geralmente vem com Node.js) - **Acesso ao GitLab da SEA Tecnologia** -
+  **Token de acesso pessoal** com escopo `api`
+</Callout>
+
+### Verificar Node.js e NPM
+
+```bash
+node --version
+# Deve retornar v16.0.0 ou superior
+
+npm --version
+# Deve retornar versão do NPM
+```
+
+Se não tiver o Node.js instalado, baixe em [nodejs.org](https://nodejs.org).
+
+## Passo 1: Obter Token de Acesso
+
+Para instalar pacotes do registro privado da SEA Tecnologia, você precisa de um token de acesso.
+
+<Steps>
+### Acessar GitLab
+Acesse: [https://gitlab.seatecnologia.com.br/-/profile/personal_access_tokens](https://gitlab.seatecnologia.com.br/-/profile/personal_access_tokens)
+
+### Criar Novo Token
+
+- Clique em **"Add new token"**
+- Dê um nome ao token (ex: "SEA CLI Token")
+- Selecione o escopo **`api`**
+- Clique em **"Create personal access token"**
+
+### Copiar Token
+
+**IMPORTANTE:** Copie o token gerado imediatamente. Você não poderá vê-lo novamente!
+
+</Steps>
+
+## Passo 2: Configurar NPM
+
+Configure o NPM para usar o registro privado da SEA Tecnologia:
+
+### Configurar o Registry
+
+```bash
+npm config set @sea-quality-code:registry https://gitlab.seatecnologia.com.br/api/v4/packages/npm/
+```
+
+### Configurar o Token
+
+Substitua `SEU_TOKEN_AQUI` pelo token que você copiou:
+
+```bash
+npm config set -- '//gitlab.seatecnologia.com.br/api/v4/packages/npm/:_authToken' "SEU_TOKEN_AQUI"
+```
+
+### Verificar Configuração
+
+```bash
+npm config get @sea-quality-code:registry
+# Deve retornar: https://gitlab.seatecnologia.com.br/api/v4/packages/npm/
+```
+
+## Passo 3: Instalar o SEA CLI
+
+Agora você pode instalar o SEA CLI globalmente:
+
+```bash
+npm i -g @sea-quality-code/sea-cli
+```
+
+<Callout type="info">
+  A flag `-g` instala o pacote globalmente, permitindo usar o comando `sea-cli`
+  de qualquer diretório.
+</Callout>
+
+### Verificar Instalação
+
+```bash
+sea-cli --version
+# Deve retornar: 0.6.1 (ou versão mais recente)
+```
+
+```bash
+sea-cli --help
+# Deve mostrar lista de comandos disponíveis
+```
+
+## Instalação Concluída!
+
+Se todos os comandos acima funcionaram, o SEA CLI está instalado e pronto para uso! 🎉
+
+## Atualizar o SEA CLI
+
+Para atualizar para a versão mais recente:
+
+```bash
+npm update -g @sea-quality-code/sea-cli
+```
+
+## Desinstalar
+
+Se precisar desinstalar o SEA CLI:
+
+```bash
+npm uninstall -g @sea-quality-code/sea-cli
+```
+
+## Problemas na Instalação?
+
+Consulte o [guia de troubleshooting](/docs/getting-started/troubleshooting) para resolver problemas comuns.
+
+## Próximos Passos
+
+Agora que o SEA CLI está instalado:
+
+- 📖 Siga o [Quickstart](/docs/getting-started/quickstart) para o primeiro uso
+- Explore os [Guias](/docs/guides/create-workspace)
+- Veja a [Referência de Comandos](/docs/cli-reference/init)

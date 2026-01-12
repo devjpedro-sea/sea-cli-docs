@@ -1,0 +1,819 @@
+---
+title: sea-cli create-client-extension-module
+description: Cria Client Extension para Liferay 7.4+ com configurações modernas
+---
+
+# sea-cli create-client-extension-module
+
+Cria um Client Extension completo para Liferay 7.4+ com estrutura moderna, webpack, testes e deploy automatizado.
+
+## Sintaxe
+
+```bash
+sea-cli create-client-extension-module
+```
+
+## Descrição
+
+O comando `create-client-extension-module` é **interativo** e cria Client Extensions modernos:
+
+1. Escolhe tipo de Client Extension
+2. Configura nome e ID
+3. Gera `client-extension.yaml`
+4. Configura webpack/build
+5. Adiciona testes
+6. Integra com deploy
+
+Client Extensions são a forma moderna de customizar Liferay 7.4+, substituindo WAR deployments.
+
+**Navegação:**
+- `↑/↓` - Navegar opções
+- `Enter` - Selecionar
+- `Ctrl+C` - Cancelar
+
+## Menu Interativo
+
+### Passo 1: Tipo de Client Extension
+
+```
+? Selecione o tipo de Client Extension:
+  ❯ Custom Element (React/Vue/Vanilla)
+    Theme CSS
+    Theme Favicon
+    Static Resource
+    JavaScript
+    CSS
+    Configuration
+    Batch
+```
+
+### Passo 2: Informações
+
+```
+? Nome do Client Extension: catalogo-produtos
+? ID único: catalogo-produtos-ce
+? Descrição: Catálogo de produtos com filtros
+? Framework (para Custom Element):
+  ❯ React
+    Vue
+    Vanilla JS
+```
+
+### Passo 3: Configurações
+
+```
+? URL de desenvolvimento: http://localhost:3000
+? Usar TypeScript? (Y/n): Y
+? Adicionar testes? (Y/n): Y
+? Adicionar Storybook? (y/N): n
+```
+
+## Tipos de Client Extensions
+
+### Custom Element
+
+Widget web component.
+
+**Estrutura gerada:**
+```
+catalogo-produtos/
+├── src/
+│   ├── index.js
+│   ├── App.jsx
+│   ├── components/
+│   │   ├── ProductList.jsx
+│   │   └── ProductFilter.jsx
+│   └── styles/
+│       └── main.css
+├── public/
+│   └── index.html
+├── test/
+│   └── App.test.js
+├── client-extension.yaml
+├── webpack.config.js
+├── package.json
+└── .babelrc
+```
+
+**client-extension.yaml:**
+```yaml
+catalogo-produtos-ce:
+    type: customElement
+    htmlElementName: catalogo-produtos
+    urls:
+        - "*.js"
+        - "*.css"
+    portletCategoryName: category.client-extensions
+    instanceable: true
+    useESM: true
+```
+
+**Código gerado (React):**
+```jsx
+// src/App.jsx
+import React, { useState, useEffect } from 'react';
+import './styles/main.css';
+
+function App() {
+    const [produtos, setProdutos] = useState([]);
+    
+    useEffect(() => {
+        // Fetch produtos
+    }, []);
+    
+    return (
+        <div className="catalogo-produtos">
+            <h2>Catálogo de Produtos</h2>
+            {/* Component logic */}
+        </div>
+    );
+}
+
+export default App;
+```
+
+**index.js:**
+```javascript
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+
+class CatalogoProdutos extends HTMLElement {
+    connectedCallback() {
+        const root = createRoot(this);
+        root.render(<App />);
+    }
+}
+
+customElements.define('catalogo-produtos', CatalogoProdutos);
+```
+
+### Theme CSS
+
+Override de CSS do tema.
+
+**Estrutura:**
+```
+custom-theme-css/
+├── src/
+│   ├── main.css
+│   └── variables.css
+├── client-extension.yaml
+└── package.json
+```
+
+**client-extension.yaml:**
+```yaml
+custom-theme-css:
+    type: themeCSS
+    url: main.css
+```
+
+**main.css:**
+```css
+:root {
+    --primary-color: #06b6d4;
+    --secondary-color: #0891b2;
+}
+
+.portlet {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+```
+
+### Theme Favicon
+
+Favicon customizado.
+
+**Estrutura:**
+```
+custom-favicon/
+├── assets/
+│   ├── favicon.ico
+│   ├── favicon-16x16.png
+│   ├── favicon-32x32.png
+│   └── apple-touch-icon.png
+└── client-extension.yaml
+```
+
+**client-extension.yaml:**
+```yaml
+custom-favicon:
+    type: themeFavicon
+    url: favicon.ico
+```
+
+### Static Resource
+
+Arquivos estáticos.
+
+**Estrutura:**
+```
+static-resources/
+├── assets/
+│   ├── images/
+│   ├── fonts/
+│   └── documents/
+└── client-extension.yaml
+```
+
+**client-extension.yaml:**
+```yaml
+static-resources:
+    type: staticResource
+    urls:
+        - "assets/**"
+```
+
+### JavaScript
+
+JavaScript global.
+
+**Estrutura:**
+```
+global-scripts/
+├── src/
+│   └── main.js
+├── client-extension.yaml
+├── webpack.config.js
+└── package.json
+```
+
+**client-extension.yaml:**
+```yaml
+global-scripts:
+    type: globalJavaScript
+    url: main.js
+```
+
+### CSS
+
+CSS global.
+
+**Estrutura:**
+```
+global-styles/
+├── src/
+│   └── main.css
+└── client-extension.yaml
+```
+
+**client-extension.yaml:**
+```yaml
+global-styles:
+    type: globalCSS
+    url: main.css
+```
+
+### Configuration
+
+Configuração JSON.
+
+**client-extension.yaml:**
+```yaml
+app-config:
+    type: configuration
+    dxp.lxc.liferay.com.liferay.oauth2:
+        oauth2.allow.authorization.code.grant: true
+```
+
+## Arquivos Gerados
+
+### package.json
+
+```json
+{
+  "name": "catalogo-produtos",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development",
+    "test": "jest",
+    "lint": "eslint src/",
+    "deploy": "npm run build && liferay deploy"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/preset-react": "^7.23.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "babel-loader": "^9.1.3",
+    "css-loader": "^6.9.0",
+    "style-loader": "^3.3.4"
+  }
+}
+```
+
+### webpack.config.js
+
+```javascript
+const path = require('path');
+
+module.exports = {
+    entry: './src/index.js',
+    output: {
+        path: path.resolve(__dirname, 'build/static'),
+        filename: 'main.js'
+    },
+    module: {
+        rules: [
+            {
+                test: /\.(js|jsx)$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: ['@babel/preset-react']
+                    }
+                }
+            },
+            {
+                test: /\.css$/,
+                use: ['style-loader', 'css-loader']
+            }
+        ]
+    },
+    devServer: {
+        port: 3000,
+        hot: true,
+        headers: {
+            'Access-Control-Allow-Origin': '*'
+        }
+    }
+};
+```
+
+### .babelrc
+
+```json
+{
+  "presets": [
+    "@babel/preset-env",
+    "@babel/preset-react"
+  ]
+}
+```
+
+### Testes
+
+```javascript
+// test/App.test.js
+import { render, screen } from '@testing-library/react';
+import App from '../src/App';
+
+describe('App', () => {
+  it('deve renderizar título', () => {
+    render(<App />);
+    expect(screen.getByText(/Catálogo de Produtos/i)).toBeInTheDocument();
+  });
+  
+  it('deve carregar produtos', async () => {
+    render(<App />);
+    // Test logic
+  });
+});
+```
+
+## Exemplos
+
+### Criar Custom Element React
+
+```bash
+cd client-extensions
+sea-cli create-client-extension-module
+```
+
+Seleções:
+1. Tipo: `Custom Element`
+2. Nome: `catalogo-produtos`
+3. ID: `catalogo-produtos-ce`
+4. Framework: `React`
+5. TypeScript: `Y`
+
+### Criar Theme CSS
+
+```bash
+cd client-extensions
+sea-cli create-client-extension-module
+```
+
+Seleções:
+1. Tipo: `Theme CSS`
+2. Nome: `custom-theme`
+3. ID: `custom-theme-css`
+
+### Criar Static Resources
+
+```bash
+cd client-extensions
+sea-cli create-client-extension-module
+```
+
+Seleções:
+1. Tipo: `Static Resource`
+2. Nome: `company-assets`
+
+## Desenvolvimento
+
+### Modo Desenvolvimento
+
+```bash
+cd client-extensions/catalogo-produtos
+
+# Instalar deps
+npm install
+
+# Dev server com hot reload
+npm run dev
+```
+
+Webpack Dev Server inicia em `http://localhost:3000`
+
+### Configurar Liferay
+
+```properties
+# portal-ext.properties
+javascript.module.framework.web.context.path=/o/js
+```
+
+### Usar no Liferay
+
+1. Adicione widget à página
+2. Configure URL de desenvolvimento:
+   ```
+   http://localhost:3000/main.js
+   ```
+
+### Build Production
+
+```bash
+npm run build
+```
+
+Gera arquivos em `build/static/`
+
+## Deploy
+
+### Deploy Manual
+
+```bash
+# Build
+npm run build
+
+# Deploy
+cp -r build/static/* $LIFERAY_HOME/deploy/client-extensions/catalogo-produtos/
+```
+
+### Deploy Automático
+
+```bash
+npm run deploy
+```
+
+### Via Gradle
+
+```bash
+./gradlew deployClientExtensions
+```
+
+## Integração com Liferay
+
+### Acessar APIs Liferay
+
+```javascript
+// src/utils/liferay.js
+export const getLiferayAPI = () => {
+    return window.Liferay;
+};
+
+export const fetchLiferayData = async (endpoint) => {
+    const response = await fetch(
+        `/o/headless-delivery/v1.0/${endpoint}`,
+        {
+            headers: {
+                'Authorization': `Bearer ${Liferay.authToken}`
+            }
+        }
+    );
+    return response.json();
+};
+```
+
+### Usar em Component
+
+```jsx
+import { fetchLiferayData } from './utils/liferay';
+
+function ProductList() {
+    const [products, setProducts] = useState([]);
+    
+    useEffect(() => {
+        fetchLiferayData('products')
+            .then(data => setProducts(data.items));
+    }, []);
+    
+    return (
+        <div>
+            {products.map(product => (
+                <div key={product.id}>{product.name}</div>
+            ))}
+        </div>
+    );
+}
+```
+
+## Troubleshooting
+
+### Erro: CORS no Dev Server
+
+**Problema:**
+```
+Access to fetch blocked by CORS policy
+```
+
+**Solução:**
+```javascript
+// webpack.config.js
+devServer: {
+    headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    }
+}
+```
+
+### Erro: Client Extension não aparece
+
+**Problema:**
+Client Extension não lista no Liferay
+
+**Solução:**
+```bash
+# Verificar client-extension.yaml
+cat client-extension.yaml
+
+# Rebuild
+npm run build
+
+# Limpar cache do Liferay
+rm -rf $LIFERAY_HOME/osgi/state/*
+```
+
+### Erro: Build falha
+
+**Problema:**
+```
+Module not found
+```
+
+**Solução:**
+```bash
+# Limpar node_modules
+rm -rf node_modules package-lock.json
+
+# Reinstalar
+npm install
+```
+
+### Erro: Hot Reload não funciona
+
+**Problema:**
+Mudanças não refletem automaticamente
+
+**Solução:**
+```javascript
+// webpack.config.js
+devServer: {
+    hot: true,
+    liveReload: true,
+    watchFiles: ['src/**/*']
+}
+```
+
+## Testes
+
+### Executar Testes
+
+```bash
+# Todos os testes
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Coverage
+npm run test:coverage
+```
+
+### Teste com Liferay Mock
+
+```javascript
+// test/setup.js
+global.Liferay = {
+    authToken: 'mock-token',
+    ThemeDisplay: {
+        getCompanyId: () => '12345',
+        getUserId: () => '67890'
+    }
+};
+```
+
+## CI/CD
+
+### GitHub Actions
+
+```yaml
+name: Build Client Extension
+on:
+  push:
+    paths:
+      - 'client-extensions/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install
+        working-directory: client-extensions/catalogo-produtos
+        run: npm ci
+        
+      - name: Lint
+        run: npm run lint
+        
+      - name: Test
+        run: npm test
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: client-extension
+          path: client-extensions/catalogo-produtos/build/
+```
+
+### Deploy Automático
+
+```yaml
+deploy:
+  needs: build
+  runs-on: ubuntu-latest
+  steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v3
+      
+    - name: Deploy to Liferay
+      run: |
+        scp -r build/* user@liferay-server:/opt/liferay/deploy/
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **IDs únicos**: Use IDs descritivos e únicos
+- **Versionamento**: Sempre versione client-extension.yaml
+- **ESM**: Use `useESM: true` para módulos modernos
+- **Bundle size**: Otimize bundle com code splitting
+- **Cache**: Configure cache headers corretamente
+- **Testes**: Teste com mock do Liferay
+</Callout>
+
+### Estrutura Recomendada
+
+```
+client-extensions/
+├── theme-overrides/          # CSS/Favicon
+├── product-catalog/          # Custom Element
+├── company-assets/           # Static Resources
+└── global-scripts/           # JavaScript global
+```
+
+## TypeScript
+
+### Configuração
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "jsx": "react",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
+```
+
+### Tipos Liferay
+
+```typescript
+// src/types/liferay.d.ts
+declare global {
+    interface Window {
+        Liferay: {
+            authToken: string;
+            ThemeDisplay: {
+                getCompanyId(): string;
+                getUserId(): string;
+            };
+        };
+    }
+}
+
+export {};
+```
+
+## Otimização
+
+### Code Splitting
+
+```javascript
+// webpack.config.js
+optimization: {
+    splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+            vendor: {
+                test: /[\\/]node_modules[\\/]/,
+                name: 'vendors',
+                priority: 10
+            }
+        }
+    }
+}
+```
+
+### Lazy Loading
+
+```jsx
+import React, { lazy, Suspense } from 'react';
+
+const ProductDetail = lazy(() => import('./ProductDetail'));
+
+function App() {
+    return (
+        <Suspense fallback={<div>Carregando...</div>}>
+            <ProductDetail />
+        </Suspense>
+    );
+}
+```
+
+## Comandos Relacionados
+
+```bash
+# Após criar client extension
+npm run dev              # Desenvolvimento
+npm run build            # Build
+npm run deploy           # Deploy
+npm test                 # Testes
+```
+
+## Ajuda
+
+```bash
+sea-cli create-client-extension-module --help
+```
+
+Output:
+```
+Usage: sea-cli create-client-extension-module
+
+Cria Client Extension para Liferay 7.4+
+
+Modo interativo - siga as instruções
+
+Options:
+  -h, --help  Exibe ajuda do comando
+```
+
+## Recursos Relacionados
+
+- [Guia: Client Extensions](/docs/guides/create-client-extension)
+- [Liferay Client Extensions Docs](https://learn.liferay.com/w/dxp/building-applications/client-extensions)
+- [Custom Elements](/docs/features/testing)
+- [Webpack Config](/docs/advanced/webpack)
+
+---
+
+**Crie Client Extensions modernos com React/Vue!** Deploy fácil, hot reload, testes inclusos.

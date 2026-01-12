@@ -1,0 +1,579 @@
+---
+title: Setup em Workspace Existente
+description: Adicione configurações de qualidade de código em workspaces Liferay já existentes
+---
+
+# Setup em Workspace Existente
+
+Este guia mostra como adicionar todas as configurações de qualidade do SEA CLI em um workspace Liferay que já existe.
+
+## Visão Geral
+
+Se você já tem um workspace Liferay e quer adicionar ESLint, Prettier, Husky, Jest e scripts de automação, este é o comando ideal.
+
+<Callout type="info">
+**Flexível e seguro:** O SEA CLI detecta configurações existentes e pergunta se deseja sobrescrever.
+</Callout>
+
+## Quando usar?
+
+Use `sea-cli setup` quando você:
+
+- Tem um workspace Liferay existente
+- Quer adicionar padrões de qualidade de código
+- Precisa padronizar um projeto legado
+- Quer modernizar a stack de ferramentas
+- Está migrando de outras configurações
+
+## Pré-requisitos
+
+- Workspace Liferay existente
+- SEA CLI instalado
+- Node.js 16.0.0 ou superior
+- package.json na raiz do workspace
+
+<Callout type="warn">
+**Backup recomendado:** Faça backup dos arquivos de configuração existentes antes de executar o setup.
+</Callout>
+
+## Método 1: Modo Interativo
+
+<Steps>
+
+### Entrar no workspace
+
+```bash
+cd /caminho/para/seu/workspace-liferay
+```
+
+### Executar sea-cli init
+
+```bash
+sea-cli init
+```
+
+### Selecionar opção
+
+```
+? O que você deseja fazer?
+  ❯ Adicionar em workspace existente
+```
+
+### Escolher features
+
+O CLI mostrará um menu com checkboxes:
+
+```
+? Selecione as features para instalar:
+  ◉ ESLint + Prettier
+  ◉ Husky + lint-staged
+  ◉ Jest + Testing Library
+  ◉ Scripts de Automação
+  ◯ Regras Sonar
+```
+
+Use **Espaço** para marcar/desmarcar e **Enter** para confirmar.
+
+### Confirmar sobrescrita
+
+Se arquivos já existirem:
+
+```
+⚠️  Arquivo .eslintrc.js já existe
+? Deseja sobrescrever? (y/N)
+```
+
+</Steps>
+
+## Método 2: Comando Direto
+
+Execute diretamente dentro do workspace:
+
+```bash
+cd seu-workspace
+sea-cli setup
+```
+
+O comando irá:
+1. Detectar o workspace atual
+2. Mostrar menu de features
+3. Perguntar sobre sobrescrita
+4. Instalar dependências
+5. Configurar tudo
+
+## Features Disponíveis
+
+### 1. ESLint + Prettier
+
+**O que instala:**
+- ESLint com regras para React
+- Prettier para formatação
+- Integração entre ESLint e Prettier
+- Arquivos `.eslintrc.js` e `.prettierrc.js`
+- Arquivos de ignore
+
+**Arquivos criados/modificados:**
+- `.eslintrc.js`
+- `.prettierrc.js`
+- `.eslintignore`
+- `.prettierignore`
+
+### 2. Husky + lint-staged
+
+**O que instala:**
+- Husky para Git hooks
+- lint-staged para validação incremental
+- Pre-commit hook configurado
+
+**Arquivos criados/modificados:**
+- `.husky/pre-commit`
+- `.lintstagedrc`
+
+### 3. Jest + Testing Library
+
+**O que instala:**
+- Jest como test runner
+- Testing Library para React
+- Babel para transpilação
+- Configuração global e por módulo
+
+**Arquivos criados/modificados:**
+- `jest.config.js` (raiz)
+- `babel.config.js`
+- `jest.setup.js`
+- `jest.config.js` em cada módulo
+
+### 4. Scripts de Automação
+
+**O que adiciona:**
+- Scripts de lint no package.json
+- Scripts de teste
+- Scripts de build/deploy Liferay
+- Find jest projects script
+
+**Modificado:**
+- `package.json` (scripts section)
+
+### 5. Regras Sonar (Opcional)
+
+**O que instala:**
+- Regras de qualidade Sonar
+- Configuração para análise estática
+- Integração com SonarQube
+
+## Processo de Setup
+
+### 1. Detecção de Módulos
+
+O SEA CLI escaneia automaticamente:
+
+```
+Escaneando workspace...
+✓ Encontrados 3 módulos React:
+  - modules/custom-portlet
+  - modules/admin-panel
+  - modules/user-dashboard
+```
+
+### 2. Instalação de Dependências
+
+```
+Instalando dependências...
+⠋ npm install eslint prettier...
+```
+
+### 3. Configuração por Módulo
+
+Para cada módulo React detectado:
+
+```
+Configurando módulo: custom-portlet
+✓ Jest configurado
+✓ Scripts adicionados
+✓ Testes criados
+```
+
+### 4. Finalização
+
+```
+✓ Setup concluído com sucesso!
+
+Próximos passos:
+1. Execute: npm run lint
+2. Execute: npm test
+3. Faça um commit para testar o Husky
+```
+
+## Workspace com package.json Existente
+
+Se seu workspace já tem `package.json`:
+
+### Cenário 1: Dependencies vazias
+
+O SEA CLI adiciona todas as dependências necessárias.
+
+### Cenário 2: Algumas dependencies
+
+O SEA CLI:
+- Mantém as existentes
+- Adiciona as faltantes
+- Atualiza versões se necessário
+
+### Cenário 3: Scripts existentes
+
+O SEA CLI:
+- Pergunta se deseja sobrescrever scripts
+- Pode mesclar scripts (se possível)
+- Permite escolher item por item
+
+## Workspace sem package.json
+
+Se não existir `package.json`:
+
+```
+⚠️  package.json não encontrado
+
+O SEA CLI irá criar um package.json básico.
+```
+
+Um novo arquivo será criado com:
+- Nome do workspace
+- Versão 1.0.0
+- Scripts padrão
+- Dependencies do SEA CLI
+
+## Configurações Preservadas
+
+O SEA CLI é cuidadoso para não quebrar configurações existentes:
+
+### Preservado
+- Estrutura de pastas
+- Módulos existentes
+- Configurações do Liferay
+- Git history
+- Dependencies personalizadas
+
+### Pode ser sobrescrito (com confirmação)
+- `.eslintrc.js`
+- `.prettierrc.js`
+- `jest.config.js`
+- Scripts no package.json
+- `.husky/pre-commit`
+
+## Exemplo Completo
+
+### Antes do Setup
+
+```
+seu-workspace/
+├── modules/
+│   ├── portlet-a/
+│   └── portlet-b/
+├── configs/
+├── gradle.properties
+└── build.gradle
+```
+
+### Executar Setup
+
+```bash
+cd seu-workspace
+sea-cli setup
+```
+
+### Após o Setup
+
+```
+seu-workspace/
+├── .husky/
+│   └── pre-commit
+├── modules/
+│   ├── portlet-a/
+│   │   ├── jest.config.js      # NOVO
+│   │   ├── __tests__/          # NOVO
+│   │   └── package.json        # MODIFICADO
+│   └── portlet-b/
+│       ├── jest.config.js      # NOVO
+│       ├── __tests__/          # NOVO
+│       └── package.json        # MODIFICADO
+├── configs/
+├── .eslintrc.js                # NOVO
+├── .prettierrc.js              # NOVO
+├── jest.config.js              # NOVO
+├── babel.config.js             # NOVO
+├── package.json                # MODIFICADO
+├── gradle.properties
+└── build.gradle
+```
+
+## Testando as Configurações
+
+Após o setup, teste cada feature:
+
+### 1. Testar ESLint
+
+```bash
+npm run lint:fix
+```
+
+Deve mostrar e corrigir problemas de código.
+
+### 2. Testar Prettier
+
+```bash
+npm run lint:format
+```
+
+Deve formatar todos os arquivos.
+
+### 3. Testar Jest
+
+```bash
+npm test
+```
+
+Deve executar testes de todos os módulos.
+
+### 4. Testar Husky
+
+```bash
+git add .
+git commit -m "test: testando husky"
+```
+
+Deve validar código antes de commitar.
+
+## Personalizações Pós-Setup
+
+### Ajustar regras ESLint
+
+Edite `.eslintrc.js` conforme necessário:
+
+```js
+module.exports = {
+  // ... base config
+  rules: {
+    // Suas regras customizadas
+    'no-unused-vars': 'warn',
+    'react/prop-types': 'off'
+  }
+}
+```
+
+### Configurar threshold de testes
+
+Edite `jest.config.js`:
+
+```js
+module.exports = {
+  // ... base config
+  coverageThreshold: {
+    global: {
+      statements: 70,  // Ajustar conforme necessário
+      branches: 70,
+      functions: 70,
+      lines: 70
+    }
+  }
+}
+```
+
+### Adicionar scripts customizados
+
+Edite `package.json`:
+
+```json
+{
+  "scripts": {
+    // ... scripts do SEA CLI
+    "build": "gradle build",
+    "deploy": "gradle deploy"
+  }
+}
+```
+
+## Migração de Configurações Antigas
+
+Se você tinha configurações antigas:
+
+### De ESLint antigo
+
+1. Backup do `.eslintrc.js` antigo
+2. Executar setup
+3. Comparar configurações
+4. Mesclar regras customizadas
+
+### De Jest antigo
+
+1. Backup do `jest.config.js` antigo
+2. Executar setup
+3. Transferir configurações específicas
+4. Atualizar paths se necessário
+
+### De Husky v4 para v8
+
+O SEA CLI usa Husky v8 (moderna):
+
+```bash
+# Remover Husky v4
+npm uninstall husky
+
+# Setup aplicará Husky v8
+sea-cli setup
+```
+
+## Troubleshooting
+
+### Nenhum módulo detectado
+
+**Problema:** "Nenhum módulo React encontrado"
+
+**Solução:**
+- Verificar estrutura de pastas
+- Verificar se módulos têm `package.json`
+- Verificar se módulos têm React como dependency
+
+### Conflito de dependências
+
+**Problema:** Erro ao instalar dependências
+
+**Solução:**
+```bash
+# Limpar node_modules
+rm -rf node_modules package-lock.json
+
+# Reinstalar
+npm install
+```
+
+### Scripts não funcionam
+
+**Problema:** Scripts adicionados não executam
+
+**Solução:**
+```bash
+# Verificar package.json
+cat package.json
+
+# Reinstalar dependências
+npm install
+
+# Testar script específico
+npm run lint -- --version
+```
+
+### Husky não valida
+
+**Problema:** Pre-commit não executa
+
+**Solução:**
+```bash
+# Reinstalar Husky
+npx husky install
+
+# Dar permissão
+chmod +x .husky/pre-commit
+
+# Testar manualmente
+.husky/pre-commit
+```
+
+## Reverter Setup
+
+Se precisar reverter as mudanças:
+
+### 1. Restaurar arquivos
+
+```bash
+# Se fez backup
+git restore .eslintrc.js .prettierrc.js jest.config.js
+
+# Se commitou antes
+git revert HEAD
+```
+
+### 2. Remover dependências
+
+```bash
+# Editar package.json manualmente
+# Ou usar npm uninstall
+npm uninstall eslint prettier jest husky
+```
+
+### 3. Remover hooks
+
+```bash
+rm -rf .husky
+```
+
+## Dicas e Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Fazer backup** antes do setup
+- **Commitar** mudanças do setup separadamente
+- **Testar** cada feature após setup
+- **Documentar** customizações feitas
+- **Comunicar** time sobre novas ferramentas
+</Callout>
+
+## Integração com CI/CD
+
+Após o setup, configure CI/CD:
+
+### GitHub Actions
+
+```yaml
+name: Quality Check
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      - run: npm install
+      - run: npm run lint
+      - run: npm test
+```
+
+### GitLab CI
+
+```yaml
+stages:
+  - quality
+
+lint:
+  stage: quality
+  script:
+    - npm install
+    - npm run lint
+
+test:
+  stage: quality
+  script:
+    - npm install
+    - npm test
+```
+
+## Próximos Passos
+
+Agora que o setup está completo:
+
+1. **Treinar equipe** nas novas ferramentas
+2. **Criar testes** para código existente
+3. **Configurar CI/CD** para validação automática
+4. **Documentar** processos atualizados
+5. **Monitorar** qualidade de código
+
+## Recursos Relacionados
+
+- [Criar Novo Workspace](/docs/guides/create-workspace)
+- [Features - ESLint + Prettier](/docs/features/eslint-prettier)
+- [Features - Husky](/docs/features/husky-lint-staged)
+- [Features - Testing](/docs/features/testing)
+- [Troubleshooting](/docs/getting-started/troubleshooting)
+
+---
+
+**Setup concluído!** Seu workspace agora tem todas as ferramentas de qualidade configuradas.

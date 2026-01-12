@@ -1,0 +1,9 @@
+{
+  "title": "Avançado",
+  "pages": [
+    "custom-templates",
+    "extending-cli",
+    "tool-integration",
+    "advanced-configuration"
+  ]
+}

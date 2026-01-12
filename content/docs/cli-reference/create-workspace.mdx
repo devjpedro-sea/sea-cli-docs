@@ -1,0 +1,456 @@
+---
+title: sea-cli create-workspace
+description: Cria um novo workspace Liferay com configurações completas
+---
+
+# sea-cli create-workspace
+
+Cria um novo workspace Liferay DXP do zero com todas as configurações de qualidade de código.
+
+## Sintaxe
+
+```bash
+sea-cli create-workspace <nome>
+```
+
+## Parâmetros
+
+### nome (obrigatório)
+
+Nome do workspace a ser criado.
+
+**Tipo:** String  
+**Regras:**
+- Apenas letras, números, hífens e underscores
+- Não pode começar com número
+- Recomendado: kebab-case
+
+**Exemplos válidos:**
+```bash
+sea-cli create-workspace meu-projeto
+sea-cli create-workspace portal_cliente
+sea-cli create-workspace app2024
+```
+
+**Exemplos inválidos:**
+```bash
+sea-cli create-workspace 123-projeto  # Começa com número
+sea-cli create-workspace meu projeto  # Tem espaço
+sea-cli create-workspace meu@projeto  # Caractere inválido
+```
+
+## Descrição
+
+O comando `create-workspace` automatiza a criação de um workspace Liferay completo:
+
+1. Clona template base do repositório
+2. Instala todas as dependências NPM
+3. Configura ESLint + Prettier
+4. Configura Husky + lint-staged
+5. Configura Jest + Testing Library
+6. Adiciona scripts de automação
+7. Inicializa repositório Git
+
+## O Que É Criado
+
+### Estrutura de Diretórios
+
+```
+meu-projeto/
+├── .husky/
+│   └── pre-commit
+├── modules/
+├── client-extensions/
+├── configs/
+├── .eslintrc.js
+├── .prettierrc.js
+├── jest.config.js
+├── babel.config.js
+├── package.json
+├── .gitignore
+└── README.md
+```
+
+### Arquivos de Configuração
+
+- `.eslintrc.js` - Regras ESLint
+- `.prettierrc.js` - Formatação Prettier
+- `jest.config.js` - Configuração de testes
+- `babel.config.js` - Transpilação
+- `.husky/pre-commit` - Git hook
+
+### Dependencies Instaladas
+
+```json
+{
+  "devDependencies": {
+    "eslint": "^8.x",
+    "prettier": "^3.x",
+    "husky": "^8.x",
+    "lint-staged": "^14.x",
+    "jest": "^29.x",
+    "@testing-library/react": "^14.x",
+    "@testing-library/jest-dom": "^6.x",
+    "@babel/preset-env": "^7.x",
+    "@babel/preset-react": "^7.x"
+  }
+}
+```
+
+### Scripts NPM
+
+```json
+{
+  "scripts": {
+    "lint": "eslint . --fix && prettier --write .",
+    "lint:format": "prettier --write .",
+    "lint:fix": "eslint . --fix",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch"
+  }
+}
+```
+
+## Exemplos
+
+### Uso Básico
+
+```bash
+# Criar workspace chamado "portal-cliente"
+sea-cli create-workspace portal-cliente
+```
+
+Output:
+```
+Criando workspace: portal-cliente
+
+Clonando template base...
+Instalando dependências...
+Configurando ESLint...
+Configurando Prettier...
+Configurando Husky...
+Configurando Jest...
+Inicializando Git...
+
+Workspace criado com sucesso!
+
+Próximos passos:
+1. cd portal-cliente
+2. npm run lint
+3. npm test
+```
+
+### Criar e Entrar
+
+```bash
+sea-cli create-workspace meu-app && cd meu-app
+```
+
+### Criar Múltiplos
+
+```bash
+# Criar vários workspaces
+for proj in app1 app2 app3; do
+  sea-cli create-workspace $proj
+done
+```
+
+## Fluxo Completo
+
+```bash
+# 1. Criar workspace
+sea-cli create-workspace ecommerce-portal
+
+# 2. Entrar no workspace
+cd ecommerce-portal
+
+# 3. Verificar estrutura
+ls -la
+
+# 4. Testar configurações
+npm run lint
+
+# 5. Executar testes
+npm test
+
+# 6. Criar primeiro módulo
+cd modules
+sea-cli create-module
+
+# 7. Fazer primeiro commit
+git add .
+git commit -m "feat: workspace inicial"
+```
+
+## Flags e Opções
+
+O comando não aceita flags adicionais. Para mais controle, use [sea-cli setup](/docs/cli-reference/setup).
+
+## Pós-Criação
+
+### Verificar Instalação
+
+```bash
+cd meu-projeto
+
+# Verificar package.json
+cat package.json
+
+# Verificar node_modules
+ls node_modules | head
+
+# Verificar Git
+git status
+```
+
+### Testar Configurações
+
+```bash
+# Lint
+npm run lint
+
+# Testes
+npm test
+
+# Husky
+git add .
+git commit -m "test"
+```
+
+## Troubleshooting
+
+### Erro: Diretório já existe
+
+**Problema:**
+```
+Error: Directory meu-projeto already exists
+```
+
+**Solução:**
+```bash
+# Remover ou renomear
+rm -rf meu-projeto
+# OU
+sea-cli create-workspace meu-projeto-v2
+```
+
+### Erro: npm install falhou
+
+**Problema:**
+```
+Error: Failed to install dependencies
+```
+
+**Solução:**
+```bash
+cd meu-projeto
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Erro: Falha ao clonar
+
+**Problema:**
+```
+Error: Failed to clone repository
+```
+
+**Solução:**
+- Verificar conexão internet
+- Verificar acesso ao GitLab
+- Verificar token configurado
+
+```bash
+npm config get @sea-quality-code:registry
+```
+
+## Diferenças vs Setup
+
+| Aspecto | create-workspace | setup |
+|---------|------------------|-------|
+| **Workspace** | Cria novo | Usa existente |
+| **Estrutura** | Template completo | Adiciona configs |
+| **Repositório** | Clona do Git | Usa local |
+| **Uso** | Projetos novos | Projetos existentes |
+
+## Template Base
+
+### Repositório
+
+O template é clonado de:
+```
+https://gitlab.seatecnologia.com.br/sea-quality-code/liferay-workspace-template
+```
+
+### Estrutura do Template
+
+- Configuração Gradle (se Liferay Workspace)
+- Estrutura de pastas padrão
+- Configurações base do Liferay
+- README com instruções
+
+## Personalização
+
+### Após Criação
+
+Você pode personalizar qualquer configuração:
+
+```bash
+cd meu-projeto
+
+# Editar regras ESLint
+vim .eslintrc.js
+
+# Editar configuração Prettier
+vim .prettierrc.js
+
+# Editar Jest
+vim jest.config.js
+```
+
+### Template Customizado
+
+Para usar template próprio, use `setup` em um workspace próprio.
+
+## Integração com Liferay
+
+### Workspace Gradle
+
+Se o template incluir Gradle:
+
+```bash
+# Build Liferay
+./gradlew build
+
+# Deploy
+./gradlew deploy
+
+# Iniciar Liferay
+./gradlew startBundle
+```
+
+### Configurar Servidor
+
+Edite `gradle.properties` ou `gradle-local.properties`:
+
+```properties
+liferay.workspace.home.dir=/opt/liferay
+```
+
+## CI/CD
+
+### GitHub Actions
+
+```yaml
+name: Create Workspace
+on:
+  workflow_dispatch:
+    inputs:
+      workspace_name:
+        description: 'Nome do workspace'
+        required: true
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install SEA CLI
+        run: npm i -g @sea-quality-code/sea-cli
+        
+      - name: Create workspace
+        run: sea-cli create-workspace ${{ github.event.inputs.workspace_name }}
+```
+
+### Script Bash
+
+```bash
+#!/bin/bash
+# create-workspace.sh
+
+PROJECT_NAME=$1
+
+if [ -z "$PROJECT_NAME" ]; then
+  echo "Usage: ./create-workspace.sh <project-name>"
+  exit 1
+fi
+
+sea-cli create-workspace $PROJECT_NAME
+cd $PROJECT_NAME
+npm run lint
+npm test
+
+echo "Workspace $PROJECT_NAME criado e testado!"
+```
+
+## Logs e Debug
+
+### Ver Detalhes
+
+```bash
+# Com mais verbosidade (se disponível)
+DEBUG=* sea-cli create-workspace meu-projeto
+```
+
+### Log de Instalação
+
+```bash
+# Salvar log
+sea-cli create-workspace meu-projeto 2>&1 | tee install.log
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Nome descritivo**: Use nome que identifique o projeto
+- **Testar após criar**: Sempre execute lint e test
+- **Commitar inicial**: Faça primeiro commit logo após criar
+- **Documentar**: Atualize README.md com informações do projeto
+- **Configurar remoto**: Adicione repositório remoto Git
+</Callout>
+
+## Comandos Relacionados
+
+Após criar workspace, você provavelmente usará:
+
+```bash
+# Criar módulos
+sea-cli create-module
+
+# Criar client extensions
+sea-cli create-client-extension-module
+
+# Configurar turborepo
+sea-cli create-turbo
+```
+
+## Ajuda
+
+```bash
+sea-cli create-workspace --help
+```
+
+Output:
+```
+Usage: sea-cli create-workspace <nome>
+
+Cria um novo workspace Liferay com configurações completas
+
+Arguments:
+  nome        Nome do workspace
+
+Options:
+  -h, --help  Exibe ajuda do comando
+```
+
+## Recursos Relacionados
+
+- [Guia: Criar Workspace](/docs/guides/create-workspace)
+- [Setup](/docs/cli-reference/setup)
+- [Quickstart](/docs/getting-started/quickstart)
+- [Workflows](/docs/workflows/development-workflow)
+
+---
+
+**Crie workspaces completos em minutos!** Tudo configurado e pronto para desenvolvimento.

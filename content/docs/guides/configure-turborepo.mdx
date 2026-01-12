@@ -1,0 +1,631 @@
+---
+title: Configurar Turborepo
+description: Configure Turborepo para otimizar builds em monorepos com cache inteligente
+---
+
+# Configurar Turborepo
+
+Configure Turborepo no seu workspace para builds paralelos e cache inteligente de monorepos.
+
+## Visão Geral
+
+Turborepo é uma ferramenta de build system que otimiza monorepos através de:
+
+- **Builds paralelos**: Múltiplos projetos ao mesmo tempo
+- **Cache inteligente**: Nunca rebuilde o que não mudou
+- **Pipelines**: Orquestre tarefas com dependências
+- **Remote Caching**: Compartilhe cache entre desenvolvedores
+
+<Callout type="info">
+**Ganho de performance:** Reduza tempo de build em até 85% com cache.
+</Callout>
+
+## Quando usar?
+
+Use Turborepo quando você tem:
+
+- Múltiplos client extensions
+- Monorepo com vários projetos
+- Builds demorados
+- Equipe compartilhando código
+- CI/CD complexo
+
+## Pré-requisitos
+
+- Workspace com pasta `client-extensions/`
+- Múltiplos client extensions (mínimo 2)
+- SEA CLI instalado
+- Node.js 16.0.0+
+
+## Como Configurar
+
+<Steps>
+
+### Entrar na pasta client-extensions
+
+```bash
+cd seu-workspace/client-extensions
+```
+
+### Executar o comando
+
+Modo interativo:
+```bash
+sea-cli init
+# Escolher: Configurar Turborepo
+```
+
+Ou diretamente:
+```bash
+sea-cli create-turbo
+```
+
+### Confirmar configuração
+
+```
+✓ Encontrados 3 client extensions:
+  - custom-element
+  - theme-css
+  - global-js
+
+? Configurar Turborepo para todos? (Y/n)
+```
+
+### Aguardar instalação
+
+O SEA CLI irá:
+1. Instalar Turborepo
+2. Criar `turbo.json`
+3. Configurar workspace
+4. Atualizar package.json
+5. Criar scripts de build
+
+</Steps>
+
+## Estrutura Após Configuração
+
+```
+client-extensions/
+├── custom-element/
+│   └── package.json
+├── theme-css/
+│   └── package.json
+├── global-js/
+│   └── package.json
+├── package.json              # Root package.json (NOVO)
+├── turbo.json               # Configuração Turborepo (NOVO)
+├── .gitignore               # Atualizado
+└── README.md                # Atualizado
+```
+
+## Configuração turbo.json
+
+### Arquivo Gerado
+
+```json
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["build/**", "dist/**"]
+    },
+    "lint": {
+      "cache": true
+    },
+    "test": {
+      "cache": true,
+      "dependsOn": ["build"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
+```
+
+### Explicação
+
+- **pipeline**: Define tarefas e suas dependências
+- **dependsOn**: Ordem de execução
+- **outputs**: Arquivos que devem ser cacheados
+- **cache**: Se deve usar cache
+- **persistent**: Para processos longos (dev server)
+
+## Package.json Root
+
+### Arquivo Criado
+
+```json
+{
+  "name": "client-extensions",
+  "private": true,
+  "workspaces": [
+    "custom-element",
+    "theme-css",
+    "global-js"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.0"
+  }
+}
+```
+
+## Usando Turborepo
+
+### Build Todos os Projetos
+
+```bash
+cd client-extensions
+npm run build
+```
+
+Output:
+```
+• Packages in scope: custom-element, theme-css, global-js
+• Running build in 3 packages
+• Remote caching disabled
+
+custom-element:build: cache miss, executing
+theme-css:build: cache miss, executing
+global-js:build: cache miss, executing
+
+ Tasks:    3 successful, 3 total
+Cached:    0 cached, 3 total
+  Time:    5.2s
+```
+
+### Build com Cache
+
+Segunda execução (sem mudanças):
+
+```bash
+npm run build
+```
+
+Output:
+```
+• Packages in scope: custom-element, theme-css, global-js
+• Running build in 3 packages
+• Remote caching disabled
+
+custom-element:build: cache hit, replaying output
+theme-css:build: cache hit, replaying output
+global-js:build: cache hit, replaying output
+
+ Tasks:    3 successful, 3 total
+Cached:    3 cached, 3 total
+  Time:    0.8s >>> FULL TURBO
+```
+
+### Lint Tudo
+
+```bash
+npm run lint
+```
+
+Executa lint em todos os projetos em paralelo.
+
+### Testes
+
+```bash
+npm run test
+```
+
+Executa testes de todos os projetos.
+
+### Desenvolvimento
+
+```bash
+npm run dev
+```
+
+Inicia dev servers de todos os projetos.
+
+## Comandos Específicos
+
+### Build Apenas Um Projeto
+
+```bash
+turbo run build --filter=custom-element
+```
+
+### Build com Dependências
+
+```bash
+turbo run build --filter=custom-element...
+```
+
+Builda `custom-element` e suas dependências.
+
+### Build Excluindo Projeto
+
+```bash
+turbo run build --filter=!theme-css
+```
+
+### Limpar Cache
+
+```bash
+turbo run clean
+```
+
+## Pipeline Avançado
+
+### Dependências entre Projetos
+
+Se `custom-element` depende de `shared-utils`:
+
+```json
+{
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["build/**"]
+    }
+  }
+}
+```
+
+O `^` indica "dependências upstream".
+
+### Tasks em Sequência
+
+```json
+{
+  "pipeline": {
+    "test": {
+      "dependsOn": ["build", "lint"]
+    }
+  }
+}
+```
+
+Testes só rodam após build e lint.
+
+### Environment Variables
+
+```json
+{
+  "pipeline": {
+    "build": {
+      "env": ["NODE_ENV", "API_URL"],
+      "outputs": ["build/**"]
+    }
+  }
+}
+```
+
+Cache invalida se essas variáveis mudarem.
+
+## Remote Caching
+
+### Configurar Vercel
+
+```bash
+npx turbo login
+npx turbo link
+```
+
+### Configurar Remote Cache
+
+```json
+{
+  "remoteCache": {
+    "signature": true
+  }
+}
+```
+
+### Build com Remote Cache
+
+```bash
+turbo run build
+```
+
+Cache compartilhado entre toda a equipe e CI/CD.
+
+## Workspaces
+
+### Adicionar Novo Workspace
+
+Edite `package.json`:
+
+```json
+{
+  "workspaces": [
+    "custom-element",
+    "theme-css",
+    "global-js",
+    "new-extension"  // NOVO
+  ]
+}
+```
+
+### Instalar em Workspace Específico
+
+```bash
+npm install react --workspace=custom-element
+```
+
+### Rodar Script em Workspace
+
+```bash
+npm run build --workspace=custom-element
+```
+
+## Otimizações
+
+### Paralelismo
+
+Por padrão, Turborepo usa todos os CPUs disponíveis:
+
+```bash
+# Limitar a 2 CPUs
+turbo run build --concurrency=2
+```
+
+### Only Changed
+
+Build apenas o que mudou:
+
+```bash
+turbo run build --filter=[HEAD^1]
+```
+
+Útil em CI/CD.
+
+### Dry Run
+
+Ver o que seria executado:
+
+```bash
+turbo run build --dry-run
+```
+
+## Integração CI/CD
+
+### GitHub Actions
+
+```yaml
+name: Build
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Build
+        run: npx turbo run build
+        
+      - name: Test
+        run: npx turbo run test
+```
+
+### GitLab CI
+
+```yaml
+build:
+  stage: build
+  script:
+    - npm install
+    - npx turbo run build
+  cache:
+    paths:
+      - node_modules/
+      - .turbo/
+```
+
+### Cache no CI
+
+```yaml
+- name: Cache Turbo
+  uses: actions/cache@v3
+  with:
+    path: .turbo
+    key: ${{ runner.os }}-turbo-${{ github.sha }}
+    restore-keys: |
+      ${{ runner.os }}-turbo-
+```
+
+## Debugging
+
+### Ver Grafo de Dependências
+
+```bash
+turbo run build --graph
+```
+
+Gera arquivo DOT do grafo.
+
+### Ver Output Detalhado
+
+```bash
+turbo run build --output-logs=new-only
+```
+
+Opções:
+- `full`: Mostrar tudo
+- `hash-only`: Apenas hashes
+- `new-only`: Apenas novos builds
+- `none`: Silencioso
+
+### Ver Timing
+
+```bash
+turbo run build --profile=profile.json
+```
+
+Analise performance no Chrome DevTools.
+
+## Troubleshooting
+
+### Cache não funciona
+
+**Problema:** Sempre rebuilda tudo
+
+**Solução:**
+```bash
+# Limpar cache
+rm -rf .turbo
+
+# Verificar outputs
+cat turbo.json
+
+# Verificar gitignore
+echo ".turbo" >> .gitignore
+```
+
+### Build muito lento
+
+**Problema:** Turbo não paralleliza
+
+**Solução:**
+```bash
+# Verificar dependências circulares
+turbo run build --graph
+
+# Aumentar paralelismo
+turbo run build --concurrency=10
+```
+
+### Workspace não encontrado
+
+**Problema:** "Package not found"
+
+**Solução:**
+```bash
+# Verificar workspaces
+cat package.json
+
+# Reinstalar
+rm -rf node_modules
+npm install
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Commitar .turbo/** ao .gitignore
+- **Usar Remote Caching** em equipes
+- **Configurar outputs** corretamente
+- **Documentar pipeline** no README
+- **Monitorar performance** com --profile
+</Callout>
+
+## Comparação de Performance
+
+### Sem Turborepo
+
+```
+Build sequencial:
+- custom-element: 15s
+- theme-css: 10s
+- global-js: 8s
+Total: 33s
+```
+
+### Com Turborepo (primeira vez)
+
+```
+Build paralelo:
+- custom-element: 15s
+- theme-css: 10s  } Em paralelo
+- global-js: 8s   }
+Total: 15s (build mais lento)
+```
+
+### Com Turborepo (com cache)
+
+```
+Build com cache:
+- custom-element: 0.5s (cache hit)
+- theme-css: 0.5s (cache hit)
+- global-js: 0.5s (cache hit)
+Total: 0.5s 🚀
+```
+
+## Monorepo Completo
+
+### Estrutura Ideal
+
+```
+workspace/
+├── client-extensions/
+│   ├── package.json      # Root com workspaces
+│   ├── turbo.json        # Pipeline config
+│   ├── extension-1/
+│   ├── extension-2/
+│   └── extension-3/
+└── packages/             # Código compartilhado
+    ├── shared-ui/
+    ├── shared-utils/
+    └── shared-types/
+```
+
+### Compartilhar Código
+
+```json
+// extension-1/package.json
+{
+  "dependencies": {
+    "shared-ui": "*",
+    "shared-utils": "*"
+  }
+}
+```
+
+Turborepo gerencia dependências internas automaticamente.
+
+## Migração para Turborepo
+
+### De Scripts Manuais
+
+Antes:
+```bash
+cd extension-1 && npm run build
+cd extension-2 && npm run build
+cd extension-3 && npm run build
+```
+
+Depois:
+```bash
+turbo run build
+```
+
+### Incremental
+
+Pode migrar gradualmente:
+1. Adicionar Turborepo
+2. Manter scripts antigos
+3. Migrar projeto por projeto
+4. Remover scripts antigos
+
+## Recursos Relacionados
+
+- [Criar Client Extension](/docs/guides/create-client-extension)
+- [Criar Módulo](/docs/guides/create-module)
+- [Turborepo Docs](https://turbo.build/)
+- [Workflow de Desenvolvimento](/docs/workflows/development-workflow)
+
+---
+
+**Turborepo configurado!** Aproveite builds ultra-rápidos com cache inteligente.

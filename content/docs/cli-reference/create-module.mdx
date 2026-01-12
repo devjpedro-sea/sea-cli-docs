@@ -1,0 +1,642 @@
+---
+title: sea-cli create-module
+description: Cria um módulo Liferay pré-configurado com testes e qualidade
+---
+
+# sea-cli create-module
+
+Cria um módulo Liferay OSGi completo com estrutura padrão, configurações de qualidade, testes e integração com build.
+
+## Sintaxe
+
+```bash
+sea-cli create-module
+```
+
+## Descrição
+
+O comando `create-module` é **interativo** e guia você na criação de módulos Liferay:
+
+1. Escolhe tipo de módulo (MVC Portlet, Service, API, etc)
+2. Define nome e package
+3. Cria estrutura completa
+4. Adiciona testes Jest
+5. Configura ESLint para JSP/JavaScript
+6. Integra com Gradle
+
+**Navegação:**
+- `↑/↓` - Navegar opções
+- `Enter` - Selecionar
+- `Ctrl+C` - Cancelar
+
+## Menu Interativo
+
+### Passo 1: Tipo de Módulo
+
+```
+? Selecione o tipo de módulo:
+  ❯ MVC Portlet
+    Service Builder (API)
+    Service Builder (Service)
+    REST Builder
+    Theme
+    Fragment
+    Widget
+    Custom
+```
+
+### Passo 2: Informações
+
+```
+? Nome do módulo: meu-portlet
+? Package base: com.empresa.projeto
+? Descrição: Descrição do módulo
+```
+
+### Passo 3: Opções
+
+```
+? Adicionar testes? (Y/n): Y
+? Adicionar sample code? (Y/n): Y
+? Versão Liferay:
+  ❯ 7.4
+    7.3
+    7.2
+```
+
+## Tipos de Módulos
+
+### MVC Portlet
+
+Portlet completo com JSP.
+
+**Estrutura gerada:**
+```
+meu-portlet/
+├── src/
+│   └── main/
+│       ├── java/
+│       │   └── com/empresa/projeto/
+│       │       └── MeuPortlet.java
+│       └── resources/
+│           └── META-INF/
+│               └── resources/
+│                   └── view.jsp
+├── test/
+│   └── MeuPortlet.test.js
+├── build.gradle
+└── bnd.bnd
+```
+
+**Código gerado:**
+```java
+@Component(
+    immediate = true,
+    property = {
+        "com.liferay.portlet.display-category=category.sample",
+        "javax.portlet.display-name=Meu Portlet",
+        "javax.portlet.init-param.template-path=/",
+        "javax.portlet.init-param.view-template=/view.jsp"
+    },
+    service = Portlet.class
+)
+public class MeuPortlet extends MVCPortlet {
+}
+```
+
+### Service Builder (API)
+
+API de serviços.
+
+**Estrutura:**
+```
+meu-service-api/
+├── src/
+│   └── main/
+│       └── java/
+│           └── com/empresa/projeto/
+│               ├── model/
+│               └── service/
+├── build.gradle
+└── bnd.bnd
+```
+
+### Service Builder (Service)
+
+Implementação de serviços.
+
+**Estrutura:**
+```
+meu-service-service/
+├── src/
+│   └── main/
+│       ├── java/
+│       │   └── com/empresa/projeto/
+│       │       └── service/
+│       │           └── impl/
+│       └── resources/
+│           └── service.xml
+├── build.gradle
+└── bnd.bnd
+```
+
+### REST Builder
+
+API REST.
+
+**Estrutura:**
+```
+meu-rest/
+├── src/
+│   └── main/
+│       └── java/
+│           └── com/empresa/projeto/
+│               └── rest/
+│                   ├── dto/
+│                   ├── resource/
+│                   └── application/
+├── rest-config.yaml
+├── build.gradle
+└── bnd.bnd
+```
+
+### Theme
+
+Theme customizado.
+
+**Estrutura:**
+```
+meu-theme/
+├── src/
+│   └── main/
+│       └── webapp/
+│           ├── css/
+│           │   └── _custom.scss
+│           ├── js/
+│           └── templates/
+├── build.gradle
+└── package.json
+```
+
+### Fragment
+
+Fragment de override.
+
+**Estrutura:**
+```
+meu-fragment/
+├── src/
+│   └── main/
+│       └── resources/
+│           └── META-INF/
+│               └── resources/
+├── bnd.bnd
+└── build.gradle
+```
+
+### Widget
+
+Widget JavaScript React.
+
+**Estrutura:**
+```
+meu-widget/
+├── src/
+│   ├── index.js
+│   ├── App.js
+│   └── components/
+├── test/
+│   └── App.test.js
+├── package.json
+├── webpack.config.js
+└── build.gradle
+```
+
+## Arquivos Gerados
+
+### build.gradle
+
+```groovy
+dependencies {
+    compileOnly group: "com.liferay.portal", name: "release.portal.api"
+    compileOnly group: "org.osgi", name: "org.osgi.service.component.annotations"
+    
+    testImplementation group: "junit", name: "junit"
+    testImplementation group: "org.mockito", name: "mockito-core"
+}
+```
+
+### bnd.bnd
+
+```properties
+Bundle-Name: Meu Portlet
+Bundle-SymbolicName: com.empresa.projeto.meu.portlet
+Bundle-Version: 1.0.0
+```
+
+### package.json (para widgets/themes)
+
+```json
+{
+  "name": "meu-widget",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development --watch",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "babel-loader": "^9.1.3",
+    "@babel/preset-react": "^7.23.3"
+  }
+}
+```
+
+### Testes
+
+```javascript
+// test/MeuPortlet.test.js
+describe('MeuPortlet', () => {
+  it('deve renderizar corretamente', () => {
+    // Test implementation
+    expect(true).toBe(true);
+  });
+  
+  it('deve processar dados', () => {
+    // Test implementation
+  });
+});
+```
+
+## Exemplos
+
+### Criar MVC Portlet
+
+```bash
+cd modules
+sea-cli create-module
+```
+
+Seleções:
+1. Tipo: `MVC Portlet`
+2. Nome: `produto-portlet`
+3. Package: `com.empresa.ecommerce`
+4. Testes: `Y`
+
+Resultado:
+```
+modules/
+└── produto-portlet/
+    ├── src/main/java/com/empresa/ecommerce/ProdutoPortlet.java
+    ├── src/main/resources/META-INF/resources/view.jsp
+    ├── test/ProdutoPortlet.test.js
+    ├── build.gradle
+    └── bnd.bnd
+```
+
+### Criar Service Builder
+
+```bash
+cd modules
+sea-cli create-module
+```
+
+Seleções:
+1. Tipo: `Service Builder (API)`
+2. Nome: `produto-api`
+3. Package: `com.empresa.ecommerce`
+
+### Criar Widget React
+
+```bash
+cd modules
+sea-cli create-module
+```
+
+Seleções:
+1. Tipo: `Widget`
+2. Nome: `catalogo-widget`
+3. Package: `com.empresa.ecommerce`
+4. Framework: `React`
+
+## Integração com Build
+
+### Gradle
+
+O módulo é automaticamente adicionado a `settings.gradle`:
+
+```groovy
+include 'modules:produto-portlet'
+include 'modules:produto-api'
+include 'modules:produto-service'
+```
+
+### Build do Módulo
+
+```bash
+# Build individual
+./gradlew :modules:produto-portlet:build
+
+# Deploy individual
+./gradlew :modules:produto-portlet:deploy
+
+# Build todos os módulos
+./gradlew build
+```
+
+## Desenvolvimento
+
+### Estrutura de Desenvolvimento
+
+```bash
+# 1. Criar módulo
+cd modules
+sea-cli create-module
+
+# 2. Implementar código
+vim src/main/java/com/empresa/MeuPortlet.java
+
+# 3. Escrever testes
+vim test/MeuPortlet.test.js
+
+# 4. Executar testes
+npm test
+
+# 5. Build
+./gradlew :modules:meu-portlet:build
+
+# 6. Deploy
+./gradlew :modules:meu-portlet:deploy
+```
+
+### Watch Mode (para Widgets)
+
+```bash
+cd modules/meu-widget
+npm run dev
+```
+
+## Testes
+
+### Executar Testes
+
+```bash
+# Todos os testes
+npm test
+
+# Módulo específico
+npm test -- modules/produto-portlet
+
+# Watch mode
+npm run test:watch
+
+# Coverage
+npm run test:coverage
+```
+
+### Estrutura de Testes
+
+```javascript
+// test/ProdutoPortlet.test.js
+import { render, screen } from '@testing-library/react';
+
+describe('ProdutoPortlet', () => {
+  beforeEach(() => {
+    // Setup
+  });
+  
+  it('deve renderizar lista de produtos', () => {
+    // Test
+  });
+  
+  it('deve filtrar produtos', () => {
+    // Test
+  });
+  
+  afterEach(() => {
+    // Cleanup
+  });
+});
+```
+
+## Troubleshooting
+
+### Erro: Não está em modules/
+
+**Problema:**
+```
+Error: Must be run inside modules/ directory
+```
+
+**Solução:**
+```bash
+cd modules
+sea-cli create-module
+```
+
+### Erro: Módulo já existe
+
+**Problema:**
+```
+Error: Module produto-portlet already exists
+```
+
+**Solução:**
+```bash
+# Renomear ou remover
+rm -rf modules/produto-portlet
+# OU usar nome diferente
+```
+
+### Erro: Gradle não encontrado
+
+**Problema:**
+```
+Error: gradle not found
+```
+
+**Solução:**
+```bash
+# Verificar Gradle wrapper
+ls -la gradlew
+
+# Ou instalar Gradle
+sdk install gradle
+```
+
+### Build Falha
+
+**Problema:**
+```
+BUILD FAILED
+```
+
+**Solução:**
+```bash
+# Limpar cache
+./gradlew clean
+
+# Rebuild
+./gradlew build --refresh-dependencies
+```
+
+## Customização
+
+### Template Customizado
+
+Edite templates em `~/.sea-cli/templates/`:
+
+```
+~/.sea-cli/
+└── templates/
+    ├── mvc-portlet/
+    ├── service-builder/
+    └── widget/
+```
+
+### Configuração Global
+
+```json
+// ~/.sea-cli/config.json
+{
+  "defaultPackage": "com.empresa",
+  "defaultVersion": "1.0.0",
+  "liferayVersion": "7.4",
+  "includeTests": true
+}
+```
+
+## CI/CD
+
+### GitHub Actions
+
+```yaml
+name: Build Module
+on:
+  push:
+    paths:
+      - 'modules/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        
+      - name: Build module
+        run: ./gradlew :modules:produto-portlet:build
+        
+      - name: Test
+        run: npm test -- modules/produto-portlet
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: produto-portlet
+          path: modules/produto-portlet/build/libs/*.jar
+```
+
+### Deploy Automático
+
+```bash
+#!/bin/bash
+# deploy-module.sh
+
+MODULE_NAME=$1
+
+if [ -z "$MODULE_NAME" ]; then
+  echo "Usage: ./deploy-module.sh <module-name>"
+  exit 1
+fi
+
+# Build
+./gradlew :modules:$MODULE_NAME:build
+
+# Deploy
+./gradlew :modules:$MODULE_NAME:deploy
+
+echo "Módulo $MODULE_NAME deployed!"
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Nome descritivo**: Use sufixo que identifica tipo (-portlet, -api, -service)
+- **Package consistente**: Siga padrão da empresa
+- **Sempre testar**: Adicione testes mesmo em módulos simples
+- **Versionamento**: Use semantic versioning (1.0.0)
+- **Documentação**: Adicione README em cada módulo
+</Callout>
+
+### Estrutura Recomendada
+
+```
+modules/
+├── produto-api/          # API/Interfaces
+├── produto-service/      # Implementação
+├── produto-web/          # Portlet
+└── produto-rest/         # API REST
+```
+
+## Padrões de Nomenclatura
+
+```
+[nome]-[tipo]
+
+Exemplos:
+- produto-portlet
+- usuario-api
+- pedido-service
+- catalogo-rest
+- custom-theme
+```
+
+## Comandos Relacionados
+
+Após criar módulo:
+
+```bash
+# Build
+./gradlew :modules:produto-portlet:build
+
+# Deploy
+./gradlew :modules:produto-portlet:deploy
+
+# Criar client extension
+sea-cli create-client-extension-module
+```
+
+## Ajuda
+
+```bash
+sea-cli create-module --help
+```
+
+Output:
+```
+Usage: sea-cli create-module
+
+Cria módulo Liferay com testes e configurações
+
+Modo interativo - siga as instruções
+
+Options:
+  -h, --help  Exibe ajuda do comando
+```
+
+## Recursos Relacionados
+
+- [Guia: Criar Módulo](/docs/guides/create-module)
+- [Testing](/docs/features/testing)
+- [Workflows](/docs/workflows/development-workflow)
+- [Liferay Module Development](https://learn.liferay.com/)
+
+---
+
+**Crie módulos Liferay completos em segundos!** Estrutura padrão, testes e qualidade inclusos.

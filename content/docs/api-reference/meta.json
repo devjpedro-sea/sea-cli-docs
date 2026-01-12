@@ -1,0 +1,9 @@
+{
+  "title": "API Reference",
+  "pages": [
+    "directory-structure",
+    "configuration-files",
+    "templates",
+    "dependencies"
+  ]
+}

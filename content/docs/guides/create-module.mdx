@@ -1,0 +1,314 @@
+---
+title: Criar Módulo
+description: Crie módulos Liferay pré-configurados com lint, testes e scripts de automação
+---
+
+# Criar Novo Módulo Liferay
+
+Crie módulos Liferay já configurados com todas as ferramentas de qualidade de código.
+
+## Visão Geral
+
+O comando `create-module` cria um novo módulo dentro do seu workspace com configuração completa de ESLint, Prettier, Jest e scripts de build/deploy para Liferay.
+
+<Callout type="info">
+**Rápido e completo:** Um módulo pronto para desenvolvimento em menos de 1 minuto.
+</Callout>
+
+## Quando usar?
+
+- Criar novo módulo/portlet no workspace
+- Adicionar funcionalidade ao projeto
+- Desenvolver componente isolado
+- Criar módulo de exemplo/template
+
+## Pré-requisitos
+
+- Workspace Liferay existente (criado com SEA CLI ou com setup aplicado)
+- Estar dentro da pasta `modules/`
+- SEA CLI instalado
+
+## Como Criar
+
+<Steps>
+
+### Entrar na pasta modules
+
+```bash
+cd seu-workspace/modules
+```
+
+### Executar o comando
+
+Modo interativo:
+```bash
+sea-cli init
+# Escolher: Criar novo módulo Liferay
+```
+
+Ou diretamente:
+```bash
+sea-cli create-module
+```
+
+### Informar nome do módulo
+
+```
+? Nome do módulo: meu-portlet
+```
+
+O nome pode conter letras, números e hífens.
+
+</Steps>
+
+## Estrutura Gerada
+
+```
+modules/meu-portlet/
+├── src/
+│   ├── components/         # Componentes React
+│   │   └── App.js
+│   ├── index.js           # Entry point
+│   └── styles/            # CSS/SCSS
+│       └── main.css
+├── __tests__/             # Testes
+│   └── App.test.js
+├── build/                 # Arquivos de build
+├── package.json           # Dependencies e scripts
+├── jest.config.js         # Config de testes
+├── .babelrc              # Babel config
+├── webpack.config.js      # Config webpack (se aplicável)
+└── README.md             # Docs do módulo
+```
+
+## Configurações Incluídas
+
+### package.json
+
+Scripts prontos para uso:
+
+```json
+{
+  "name": "meu-portlet",
+  "version": "1.0.0",
+  "scripts": {
+    "lint": "eslint src --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "liferay:build": "npm run build && npm run liferay:deploy",
+    "liferay:deploy": "cp build/*.jar /path/to/liferay/deploy"
+  }
+}
+```
+
+### jest.config.js
+
+Configuração de testes do módulo:
+
+```js
+module.exports = {
+  displayName: 'meu-portlet',
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  moduleNameMapper: {
+    '\\.(css|less|scss)$': 'identity-obj-proxy'
+  }
+}
+```
+
+## Desenvolvimento
+
+### 1. Instalar dependências
+
+```bash
+cd meu-portlet
+npm install
+```
+
+### 2. Desenvolver componentes
+
+Edite arquivos em `src/components/`
+
+### 3. Escrever testes
+
+Crie testes em `__tests__/`
+
+### 4. Testar
+
+```bash
+npm test
+```
+
+### 5. Build e Deploy
+
+```bash
+npm run liferay:build
+```
+
+## Scripts Disponíveis
+
+### Lint
+
+```bash
+# Validar e corrigir código
+npm run lint
+```
+
+### Testes
+
+```bash
+# Executar testes
+npm test
+
+# Modo watch
+npm test:watch
+
+# Com cobertura
+npm test:coverage
+```
+
+### Build Liferay
+
+```bash
+# Build + Deploy
+npm run liferay:build
+
+# Apenas deploy
+npm run liferay:deploy
+```
+
+## Integração com Liferay
+
+O módulo é configurado para integrar com Liferay DXP:
+
+### 1. Configurar path do Liferay
+
+Edite o script `liferay:deploy` no `package.json`:
+
+```json
+{
+  "scripts": {
+    "liferay:deploy": "cp build/*.jar /opt/liferay/deploy"
+  }
+}
+```
+
+### 2. Build Gradle (se aplicável)
+
+Se usar Gradle, crie `build.gradle`:
+
+```groovy
+dependencies {
+    compileOnly group: "com.liferay.portal", name: "release.portal.api"
+}
+
+buildCSS {
+    // Config CSS
+}
+
+transpileJS {
+    // Config JS
+}
+```
+
+## Testes no Módulo
+
+### Estrutura de Testes
+
+```
+__tests__/
+├── App.test.js
+├── components/
+│   ├── Header.test.js
+│   └── Footer.test.js
+└── utils/
+    └── helpers.test.js
+```
+
+### Exemplo de Teste
+
+```js
+import { render, screen } from '@testing-library/react'
+import App from '../src/components/App'
+
+describe('App Component', () => {
+  it('deve renderizar corretamente', () => {
+    render(<App />)
+    expect(screen.getByText('Meu Portlet')).toBeInTheDocument()
+  })
+})
+```
+
+## Personalização
+
+### Adicionar dependências
+
+```bash
+npm install axios
+npm install --save-dev @types/react
+```
+
+### Modificar configuração Jest
+
+Edite `jest.config.js`:
+
+```js
+module.exports = {
+  // ... base config
+  collectCoverageFrom: [
+    'src/**/*.{js,jsx}',
+    '!src/index.js'
+  ]
+}
+```
+
+## Múltiplos Módulos
+
+Crie quantos módulos precisar:
+
+```bash
+cd modules
+sea-cli create-module  # admin-panel
+sea-cli create-module  # user-dashboard
+sea-cli create-module  # settings-portlet
+```
+
+Resultado:
+```
+modules/
+├── admin-panel/
+├── user-dashboard/
+└── settings-portlet/
+```
+
+## Troubleshooting
+
+### Módulo não cria
+
+**Problema:** Erro ao criar módulo
+
+**Solução:**
+- Verificar se está em `modules/`
+- Verificar permissões de escrita
+- Nome válido (sem espaços ou caracteres especiais)
+
+### Scripts não funcionam
+
+**Problema:** npm run não encontra script
+
+**Solução:**
+```bash
+npm install
+cat package.json  # Verificar scripts
+```
+
+## Próximos Passos
+
+- [Client Extensions](/docs/guides/create-client-extension)
+- [Testing](/docs/features/testing)
+- [Workflow de Desenvolvimento](/docs/workflows/development-workflow)
+
+---
+
+**Módulo criado!** Comece a desenvolver com qualidade garantida.

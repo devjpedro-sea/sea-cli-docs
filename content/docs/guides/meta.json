@@ -1,0 +1,10 @@
+{
+  "title": "Guias",
+  "pages": [
+    "create-workspace",
+    "setup-existing-workspace",
+    "create-module",
+    "create-client-extension",
+    "configure-turborepo"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "title": "CLI Reference",
+  "pages": [
+    "init",
+    "create-workspace",
+    "setup",
+    "create-module",
+    "create-client-extension-module",
+    "create-turbo"
+  ]
+}

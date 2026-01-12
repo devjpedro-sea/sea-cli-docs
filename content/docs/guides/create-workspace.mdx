@@ -1,0 +1,415 @@
+---
+title: Criar Novo Workspace
+description: Guia completo para criar um workspace Liferay do zero com o SEA CLI
+---
+
+# Criar Novo Workspace Liferay
+
+Este guia mostra como criar um workspace Liferay completamente configurado usando o SEA CLI.
+
+## Visão Geral
+
+O comando `create-workspace` cria um novo workspace Liferay DXP com todas as configurações de qualidade de código já aplicadas. Em poucos minutos, você terá um projeto pronto para desenvolvimento.
+
+<Callout type="info">
+**Tempo estimado:** 5-10 minutos (dependendo da velocidade da internet)
+</Callout>
+
+## O que será criado?
+
+Ao criar um workspace, você terá:
+
+- **Estrutura base do Liferay** clonada de um template
+- **ESLint + Prettier** configurados
+- **Husky + lint-staged** para validação pre-commit
+- **Jest + Testing Library** para testes
+- **Scripts de automação** para build, deploy e testes
+- **Configuração Git** inicializada
+
+## Pré-requisitos
+
+Antes de começar, certifique-se de ter:
+
+- SEA CLI instalado globalmente
+- Node.js 16.0.0 ou superior
+- Git configurado
+- Conexão com internet (para clonar repositório)
+- Acesso ao GitLab da SEA Tecnologia
+
+## Método 1: Usando o Modo Interativo
+
+A forma mais fácil de criar um workspace:
+
+<Steps>
+
+### Executar o comando init
+
+```bash
+sea-cli init
+```
+
+### Selecionar a opção
+
+Use as setas para navegar e selecione:
+```
+? O que você deseja fazer?
+  ❯ Criar novo workspace Liferay
+```
+
+### Informar o nome do projeto
+
+```
+? Nome do workspace: meu-projeto-liferay
+```
+
+### Aguardar a criação
+
+O SEA CLI irá:
+1. Clonar o template base
+2. Instalar dependências
+3. Configurar ESLint e Prettier
+4. Configurar Husky
+5. Configurar Jest
+6. Adicionar scripts de automação
+
+</Steps>
+
+## Método 2: Comando Direto
+
+Você também pode criar diretamente sem o menu interativo:
+
+```bash
+sea-cli create-workspace meu-projeto-liferay
+```
+
+### Parâmetros
+
+- **nome** (obrigatório): Nome do diretório do workspace
+
+### Exemplo
+
+```bash
+# Criar workspace chamado "portal-cliente"
+sea-cli create-workspace portal-cliente
+
+# O comando irá criar a pasta portal-cliente/
+# e configurar tudo dentro dela
+```
+
+## Estrutura Gerada
+
+Após a execução, você terá esta estrutura:
+
+```
+meu-projeto-liferay/
+├── .husky/                       # Git hooks
+│   └── pre-commit               # Valida código antes de commit
+├── modules/                      # Seus módulos Liferay
+│   └── .gitkeep
+├── client-extensions/            # Client extensions (Liferay 7.4+)
+│   └── .gitkeep
+├── configs/                      # Configurações do Liferay
+├── .eslintrc.js                 # Configuração ESLint
+├── .prettierrc.js               # Configuração Prettier
+├── .eslintignore                # Arquivos ignorados pelo ESLint
+├── .prettierignore              # Arquivos ignorados pelo Prettier
+├── jest.config.js               # Configuração Jest (raiz)
+├── babel.config.js              # Babel para testes
+├── .gitignore                   # Git ignore
+├── package.json                 # Dependências e scripts
+├── README.md                    # Documentação do projeto
+└── .git/                        # Repositório Git inicializado
+```
+
+## Dependências Instaladas
+
+O workspace virá com estas dependências:
+
+### Linting
+- `eslint`
+- `eslint-config-prettier`
+- `eslint-plugin-react`
+- `eslint-plugin-react-hooks`
+- `prettier`
+
+### Git Hooks
+- `husky`
+- `lint-staged`
+
+### Testing
+- `jest`
+- `@testing-library/react`
+- `@testing-library/jest-dom`
+- `@testing-library/user-event`
+- `@babel/preset-env`
+- `@babel/preset-react`
+
+## Scripts Disponíveis
+
+Seu `package.json` terá estes scripts prontos:
+
+### Linting
+
+```bash
+# Validar e formatar todo o workspace
+npm run lint
+
+# Apenas formatar com Prettier
+npm run lint:format
+
+# Apenas validar com ESLint
+npm run lint:fix
+```
+
+### Testes
+
+```bash
+# Executar todos os testes
+npm test
+
+# Testes com cobertura + relatório HTML
+npm run test:coverage
+
+# Modo watch para desenvolvimento
+npm run test:watch
+```
+
+## Primeiro Uso
+
+Após criar o workspace, siga estes passos:
+
+<Steps>
+
+### Entrar no diretório
+
+```bash
+cd meu-projeto-liferay
+```
+
+### Verificar instalação
+
+```bash
+# Validar código
+npm run lint
+
+# Executar testes
+npm test
+```
+
+### Inicializar Git (se necessário)
+
+Se o Git não foi inicializado automaticamente:
+
+```bash
+git init
+git add .
+git commit -m "feat: projeto inicial com SEA CLI"
+```
+
+### Criar primeiro módulo
+
+```bash
+cd modules
+sea-cli create-module
+```
+
+</Steps>
+
+## Configurações Aplicadas
+
+### ESLint (.eslintrc.js)
+
+O arquivo de configuração do ESLint inclui:
+
+- Regras para React e JSX
+- Suporte a ES6+
+- Integração com Prettier
+- Regras de hooks do React
+- Ambiente browser e Node
+
+### Prettier (.prettierrc.js)
+
+Configuração de formatação:
+
+- Single quotes
+- Sem ponto e vírgula opcional
+- Tab width: 2 espaços
+- Trailing comma: es5
+- Print width: 80
+
+### Husky (pre-commit)
+
+O hook pre-commit executará automaticamente:
+
+1. lint-staged nos arquivos modificados
+2. Validação ESLint
+3. Formatação Prettier
+4. Impede commit se houver erros
+
+### Jest (jest.config.js)
+
+Configuração de testes:
+
+- Ambiente: jsdom (browser)
+- Setup files configurados
+- Coverage threshold definido
+- Transform com Babel
+
+## Personalizações
+
+Você pode personalizar as configurações editando:
+
+### Modificar regras ESLint
+
+Edite `.eslintrc.js`:
+
+```js
+module.exports = {
+  // ... config base
+  rules: {
+    // Adicione suas regras customizadas
+    'no-console': 'warn',
+    'react/prop-types': 'off'
+  }
+}
+```
+
+### Ajustar Prettier
+
+Edite `.prettierrc.js`:
+
+```js
+module.exports = {
+  // ... config base
+  printWidth: 100,  // Aumentar largura
+  tabWidth: 4       // Usar 4 espaços
+}
+```
+
+### Configurar Jest
+
+Edite `jest.config.js`:
+
+```js
+module.exports = {
+  // ... config base
+  coverageThreshold: {
+    global: {
+      statements: 80,  // Aumentar threshold
+      branches: 80,
+      functions: 80,
+      lines: 80
+    }
+  }
+}
+```
+
+## Próximos Passos
+
+Agora que seu workspace está criado:
+
+1. **Criar módulos**: Use `sea-cli create-module` dentro de `/modules`
+2. **Desenvolver**: Comece a criar seus componentes
+3. **Testar**: Escreva testes para seus componentes
+4. **Commitar**: O Husky validará automaticamente
+
+## Integração com Liferay
+
+Para integrar com o Liferay DXP:
+
+### 1. Configurar Gradle
+
+Certifique-se de ter um `build.gradle` na raiz (se usar Liferay Workspace)
+
+### 2. Configurar servidor Liferay
+
+Configure em `gradle.properties` ou `gradle-local.properties`:
+
+```properties
+liferay.workspace.home.dir=/caminho/para/liferay
+```
+
+### 3. Deploy de módulos
+
+Cada módulo terá scripts de deploy automático.
+
+## Troubleshooting
+
+### Erro ao clonar repositório
+
+**Problema:** Falha ao clonar o template base
+
+**Solução:**
+- Verificar conexão com internet
+- Verificar acesso ao GitLab
+- Tentar novamente
+
+### Erro ao instalar dependências
+
+**Problema:** npm install falhou
+
+**Solução:**
+```bash
+cd meu-projeto-liferay
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Husky não funciona
+
+**Problema:** Pre-commit hook não executa
+
+**Solução:**
+```bash
+npx husky install
+chmod +x .husky/pre-commit
+```
+
+## Dicas e Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Commits frequentes**: Aproveite a validação automática
+- **Testes desde o início**: Crie testes conforme desenvolve
+- **Documentação**: Mantenha o README.md atualizado
+- **Branches**: Use branches para features
+- **Code Review**: Revise código antes de merge
+</Callout>
+
+## Comandos Úteis
+
+```bash
+# Ver status do Git
+git status
+
+# Validar código antes de commit
+npm run lint
+
+# Executar testes específicos
+npm test -- --testPathPattern=MeuComponente
+
+# Ver cobertura de testes
+npm run test:coverage
+open coverage/lcov-report/index.html
+
+# Limpar cache do Jest
+npm test -- --clearCache
+```
+
+## Recursos Relacionados
+
+- [Setup em Workspace Existente](/docs/guides/setup-existing-workspace)
+- [Criar Módulo](/docs/guides/create-module)
+- [Features - ESLint + Prettier](/docs/features/eslint-prettier)
+- [Features - Testing](/docs/features/testing)
+- [Workflow de Desenvolvimento](/docs/workflows/development-workflow)
+
+## Vídeo Tutorial
+
+<Callout>
+Em breve: vídeo mostrando a criação completa de um workspace.
+</Callout>
+
+---
+
+**Workspace criado com sucesso!** Agora você está pronto para desenvolver com qualidade de código garantida.

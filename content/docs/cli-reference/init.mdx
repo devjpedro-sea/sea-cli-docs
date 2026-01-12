@@ -1,0 +1,239 @@
+---
+title: sea-cli init
+description: Comando interativo principal do SEA CLI
+---
+
+# sea-cli init
+
+Inicia o modo interativo do SEA CLI com menu de opções.
+
+## Sintaxe
+
+```bash
+sea-cli init
+```
+
+## Descrição
+
+O comando `init` é a forma mais fácil de usar o SEA CLI. Ele apresenta um menu interativo onde você pode escolher a ação desejada sem precisar lembrar dos comandos específicos.
+
+## Opções do Menu
+
+Ao executar `sea-cli init`, você verá:
+
+```
+SEA CLI - Menu Interativo
+
+? O que você deseja fazer?
+  ❯ Criar novo workspace Liferay
+    Adicionar em workspace existente
+    Criar módulo client extension
+    Criar novo módulo Liferay
+    Configurar Turborepo
+```
+
+### 1. Criar novo workspace Liferay
+
+Cria um workspace completo do zero com todas as configurações.
+
+**Executa:** `sea-cli create-workspace`
+
+**Quando usar:**
+- Iniciar novo projeto
+- Projeto do zero
+- Template pré-configurado
+
+### 2. Adicionar em workspace existente
+
+Adiciona configurações de qualidade em workspace já existente.
+
+**Executa:** `sea-cli setup`
+
+**Quando usar:**
+- Workspace já criado
+- Projeto legado
+- Migração de configurações
+
+### 3. Criar módulo client extension
+
+Cria client extension para Liferay 7.4+.
+
+**Executa:** `sea-cli create-client-extension-module`
+
+**Quando usar:**
+- Liferay 7.4+
+- Aplicações modernas
+- Front-end independente
+
+### 4. Criar novo módulo Liferay
+
+Cria módulo tradicional Liferay.
+
+**Executa:** `sea-cli create-module`
+
+**Quando usar:**
+- Dentro de workspace
+- Novo portlet/módulo
+- Componente isolado
+
+### 5. Configurar Turborepo
+
+Configura Turborepo para monorepos.
+
+**Executa:** `sea-cli create-turbo`
+
+**Quando usar:**
+- Múltiplos client extensions
+- Monorepo
+- Otimizar builds
+
+## Navegação
+
+Use as teclas:
+
+- **↑ ↓**: Navegar entre opções
+- **Enter**: Selecionar opção
+- **Ctrl+C**: Cancelar
+
+## Exemplos
+
+### Uso Básico
+
+```bash
+# Executar menu interativo
+sea-cli init
+```
+
+### Fluxo Completo
+
+```bash
+# 1. Entrar em diretório
+cd ~/projetos
+
+# 2. Executar init
+sea-cli init
+
+# 3. Escolher "Criar novo workspace Liferay"
+# 4. Informar nome: "meu-projeto"
+# 5. Aguardar criação
+
+# 6. Entrar no workspace
+cd meu-projeto
+
+# 7. Criar módulo
+cd modules
+sea-cli init
+# Escolher "Criar novo módulo Liferay"
+```
+
+## Vantagens
+
+### Facilidade
+
+Não precisa decorar comandos:
+```bash
+# Ao invés de:
+sea-cli create-workspace nome --template=base --features=all
+
+# Apenas:
+sea-cli init
+```
+
+### Descoberta
+
+Veja todas as opções disponíveis de uma vez.
+
+### Orientação
+
+O menu guia você pelo processo com prompts claros.
+
+## Quando NÃO Usar
+
+Use comandos diretos quando:
+
+- **Scripts automatizados**: CI/CD pipelines
+- **Comandos repetitivos**: Mesma ação várias vezes
+- **Programação**: Chamadas via código
+
+Exemplo de automação:
+```bash
+# Para scripts, use comandos diretos
+sea-cli create-workspace projeto-$ENV
+```
+
+## Combinação com Outros Comandos
+
+### Antes de Outros Comandos
+
+```bash
+# Ver opções antes de decidir
+sea-cli init
+
+# Depois executar comando específico
+sea-cli create-workspace meu-projeto
+```
+
+### Exploração
+
+```bash
+# Explorar funcionalidades
+sea-cli init
+
+# Depois consultar help
+sea-cli create-module --help
+```
+
+## Output Esperado
+
+### Interface
+
+```
+SEA CLI
+
+Automação de Qualidade de Código para Liferay DXP
+
+? O que você deseja fazer? (Use arrow keys)
+  ❯ Criar novo workspace Liferay
+    Adicionar em workspace existente
+    Criar módulo client extension
+    Criar novo módulo Liferay
+    Configurar Turborepo
+```
+
+### Selecionando Opção
+
+```
+? O que você deseja fazer? Criar novo workspace Liferay
+? Nome do workspace: _
+```
+
+## Flags
+
+O comando `init` não aceita flags. Use os comandos específicos para mais controle.
+
+## Ajuda
+
+```bash
+sea-cli init --help
+```
+
+Output:
+```
+Usage: sea-cli init
+
+Inicia o modo interativo do SEA CLI
+
+Options:
+  -h, --help     Exibe ajuda do comando
+```
+
+## Recursos Relacionados
+
+- [create-workspace](/docs/cli-reference/create-workspace)
+- [setup](/docs/cli-reference/setup)
+- [create-module](/docs/cli-reference/create-module)
+- [Quickstart](/docs/getting-started/quickstart)
+
+---
+
+**Comando mais fácil do SEA CLI!** Use para explorar e descobrir funcionalidades.

@@ -1,0 +1,662 @@
+---
+title: sea-cli setup
+description: Adiciona configurações de qualidade a um workspace Liferay existente
+---
+
+# sea-cli setup
+
+Adiciona todas as configurações de qualidade de código (ESLint, Prettier, Husky, Jest) a um workspace Liferay já existente.
+
+## Sintaxe
+
+```bash
+sea-cli setup [diretorio]
+```
+
+## Parâmetros
+
+### diretorio (opcional)
+
+Caminho do workspace onde as configurações serão adicionadas.
+
+**Padrão:** Diretório atual (`.`)  
+**Tipo:** String (caminho absoluto ou relativo)
+
+**Exemplos:**
+```bash
+# No diretório atual
+sea-cli setup
+
+# Em outro diretório
+sea-cli setup ./meu-workspace
+
+# Caminho absoluto
+sea-cli setup /home/user/projetos/portal
+```
+
+## Descrição
+
+O comando `setup` é ideal para **projetos existentes** que precisam adicionar as configurações de qualidade SEA:
+
+1. Detecta estrutura do projeto
+2. Preserva configurações existentes
+3. Adiciona ESLint + Prettier
+4. Configura Husky + lint-staged
+5. Adiciona Jest + Testing Library
+6. Integra com scripts NPM
+7. Cria/atualiza package.json
+
+**Diferencial:** Não sobrescreve configurações existentes - faz merge inteligente.
+
+## Recursos
+
+### Detecção Automática
+
+O setup detecta automaticamente:
+- Estrutura Liferay Workspace
+- Módulos existentes (`modules/`)
+- Client Extensions (`client-extensions/`)
+- Configurações antigas (ESLint, Prettier)
+- Testes existentes
+
+### Preservação de Configurações
+
+Se já existir `.eslintrc.js`:
+- Faz backup (`.eslintrc.js.backup`)
+- Mergeia regras
+- Mantém configurações personalizadas
+
+Se já existir `package.json`:
+- Adiciona devDependencies
+- Adiciona scripts
+- Preserva scripts existentes
+
+### Integração com Módulos
+
+Detecta módulos em `modules/` e:
+- Configura lint para JSP/JavaScript
+- Adiciona testes para cada módulo
+- Configura paths do Jest
+
+## O Que É Instalado
+
+### Arquivos Criados/Atualizados
+
+```
+workspace/
+├── .eslintrc.js          (novo ou merged)
+├── .prettierrc.js        (novo ou merged)
+├── jest.config.js        (novo)
+├── babel.config.js       (novo)
+├── .husky/
+│   └── pre-commit        (novo)
+├── package.json          (atualizado)
+└── .gitignore            (atualizado)
+```
+
+### Dependencies
+
+```json
+{
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.1",
+    "jest": "^29.7.0",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@babel/preset-env": "^7.23.8",
+    "@babel/preset-react": "^7.23.3"
+  }
+}
+```
+
+### Scripts Adicionados
+
+```json
+{
+  "scripts": {
+    "lint": "eslint . --fix && prettier --write .",
+    "lint:format": "prettier --write .",
+    "lint:fix": "eslint . --fix",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "prepare": "husky install"
+  }
+}
+```
+
+## Exemplos
+
+### Uso Básico
+
+```bash
+# No diretório do workspace
+cd meu-workspace-liferay
+sea-cli setup
+```
+
+Output:
+```
+Configurando workspace: meu-workspace-liferay
+
+Detectando estrutura...
+- Encontrados 3 módulos em modules/
+- Encontradas 2 client extensions
+
+Instalando dependências...
+Configurando ESLint...
+Configurando Prettier...
+Configurando Husky...
+Configurando Jest...
+
+Setup concluído com sucesso!
+
+Arquivos criados:
+✓ .eslintrc.js
+✓ .prettierrc.js
+✓ jest.config.js
+✓ babel.config.js
+✓ .husky/pre-commit
+
+Arquivos atualizados:
+✓ package.json
+✓ .gitignore
+
+Próximos passos:
+1. npm run lint
+2. npm test
+3. git add .
+4. git commit -m "chore: add quality configs"
+```
+
+### Setup em Outro Diretório
+
+```bash
+sea-cli setup ~/projetos/portal-cliente
+```
+
+### Verificar Depois do Setup
+
+```bash
+cd meu-workspace
+sea-cli setup
+
+# Verificar configs
+cat .eslintrc.js
+cat .prettierrc.js
+
+# Testar
+npm run lint
+npm test
+```
+
+## Fluxo Completo
+
+```bash
+# 1. Clonar projeto existente
+git clone https://gitlab.com/empresa/projeto-liferay
+cd projeto-liferay
+
+# 2. Setup SEA
+sea-cli setup
+
+# 3. Instalar deps (se ainda não)
+npm install
+
+# 4. Executar lint
+npm run lint
+
+# 5. Ver problemas
+npm run lint:fix
+
+# 6. Executar testes
+npm test
+
+# 7. Commit
+git add .
+git commit -m "chore: add SEA quality configs"
+git push
+```
+
+## Comportamento Inteligente
+
+### Merge de Configurações
+
+#### .eslintrc.js Existente
+
+**Antes:**
+```javascript
+module.exports = {
+  extends: ['eslint:recommended'],
+  rules: {
+    'no-console': 'warn'
+  }
+};
+```
+
+**Depois do Setup:**
+```javascript
+module.exports = {
+  extends: [
+    'eslint:recommended',
+    'plugin:react/recommended'  // Adicionado
+  ],
+  rules: {
+    'no-console': 'warn',       // Preservado
+    'prettier/prettier': 'error' // Adicionado
+  }
+};
+```
+
+#### package.json Existente
+
+**Antes:**
+```json
+{
+  "scripts": {
+    "build": "gradle build"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
+```
+
+**Depois:**
+```json
+{
+  "scripts": {
+    "build": "gradle build",      // Preservado
+    "lint": "eslint . --fix",     // Adicionado
+    "test": "jest"                // Adicionado
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",       // Preservado
+    "eslint": "^8.57.0",          // Adicionado
+    "prettier": "^3.2.5"          // Adicionado
+  }
+}
+```
+
+### Backup Automático
+
+Se arquivos existirem, são feitos backups:
+
+```
+.eslintrc.js → .eslintrc.js.backup
+.prettierrc.js → .prettierrc.js.backup
+jest.config.js → jest.config.js.backup
+```
+
+## Detecção de Módulos
+
+### Estrutura Detectada
+
+```
+workspace/
+├── modules/
+│   ├── modulo-1/
+│   ├── modulo-2/
+│   └── modulo-3/
+└── client-extensions/
+    ├── theme-css/
+    └── custom-element/
+```
+
+### Configuração Gerada
+
+```javascript
+// jest.config.js
+module.exports = {
+  testMatch: [
+    '**/modules/**/test/**/*.test.js',
+    '**/client-extensions/**/test/**/*.test.js'
+  ],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/$1',
+    '^@modules/(.*)$': '<rootDir>/modules/$1'
+  }
+};
+```
+
+## Troubleshooting
+
+### Erro: package.json não encontrado
+
+**Problema:**
+```
+Error: package.json not found
+```
+
+**Solução:**
+```bash
+# Criar package.json primeiro
+npm init -y
+
+# Depois executar setup
+sea-cli setup
+```
+
+### Erro: Não é um workspace Liferay
+
+**Problema:**
+```
+Warning: This doesn't appear to be a Liferay workspace
+Continue anyway? (y/n)
+```
+
+**Solução:**
+- Digite `y` para continuar
+- Ou crie estrutura Liferay manualmente:
+
+```bash
+mkdir -p modules client-extensions configs
+```
+
+### Conflitos de Versão
+
+**Problema:**
+```
+Error: eslint version conflict
+```
+
+**Solução:**
+```bash
+# Remover node_modules
+rm -rf node_modules package-lock.json
+
+# Reinstalar
+npm install
+```
+
+### Git Hook Não Funciona
+
+**Problema:**
+Husky não executa no pre-commit
+
+**Solução:**
+```bash
+# Reinstalar husky
+npm run prepare
+
+# OU manualmente
+npx husky install
+```
+
+## Diferenças vs create-workspace
+
+| Aspecto | setup | create-workspace |
+|---------|-------|------------------|
+| **Workspace** | Existente | Novo |
+| **Estrutura** | Preserva | Cria do zero |
+| **Configurações** | Mergeia | Cria novas |
+| **Backup** | Sim | Não necessário |
+| **Uso** | Projetos legados | Projetos novos |
+
+## Quando Usar
+
+### Use `setup` quando:
+- Já tem workspace Liferay
+- Quer adicionar quality configs
+- Projeto em andamento
+- Múltiplos módulos existentes
+- Configurações personalizadas existentes
+
+### Use `create-workspace` quando:
+- Iniciar projeto do zero
+- Quer template completo
+- Sem workspace existente
+
+## Flags e Opções
+
+### --force (futuro)
+
+Sobrescreve configurações sem fazer backup:
+
+```bash
+sea-cli setup --force
+```
+
+### --dry-run (futuro)
+
+Simula setup sem fazer alterações:
+
+```bash
+sea-cli setup --dry-run
+```
+
+## Pós-Setup
+
+### Verificar Instalação
+
+```bash
+# Verificar package.json
+cat package.json | jq '.devDependencies'
+
+# Verificar scripts
+npm run
+
+# Verificar ESLint
+npx eslint --version
+
+# Verificar Prettier
+npx prettier --version
+```
+
+### Testar Configurações
+
+```bash
+# Lint
+npm run lint
+
+# Fix
+npm run lint:fix
+
+# Testes
+npm test
+
+# Coverage
+npm run test:coverage
+
+# Husky
+git add .
+git commit -m "test husky"
+```
+
+## Integração CI/CD
+
+### GitHub Actions
+
+```yaml
+name: Setup Quality
+on:
+  push:
+    branches: [main]
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install SEA CLI
+        run: npm i -g @sea-quality-code/sea-cli
+        
+      - name: Run setup
+        run: sea-cli setup
+        
+      - name: Run lint
+        run: npm run lint
+        
+      - name: Run tests
+        run: npm test
+```
+
+### GitLab CI
+
+```yaml
+setup-quality:
+  stage: setup
+  script:
+    - npm i -g @sea-quality-code/sea-cli
+    - sea-cli setup
+    - npm run lint
+    - npm test
+  only:
+    - main
+```
+
+## Migração de Projetos
+
+### De Projeto Sem Configs
+
+```bash
+# 1. Backup
+git checkout -b add-quality-configs
+
+# 2. Setup
+sea-cli setup
+
+# 3. Corrigir problemas de lint
+npm run lint:fix
+
+# 4. Commit
+git add .
+git commit -m "chore: add SEA quality configs"
+
+# 5. PR/MR
+git push origin add-quality-configs
+```
+
+### De Outra Ferramenta de Quality
+
+Se já usa ESLint/Prettier diferentes:
+
+```bash
+# 1. Backup configs antigas
+cp .eslintrc.js .eslintrc.js.old
+cp .prettierrc.js .prettierrc.js.old
+
+# 2. Setup
+sea-cli setup
+
+# 3. Revisar mudanças
+diff .eslintrc.js.old .eslintrc.js
+
+# 4. Ajustar manualmente se necessário
+vim .eslintrc.js
+```
+
+## Customização Pós-Setup
+
+### Ajustar Regras ESLint
+
+```javascript
+// .eslintrc.js
+module.exports = {
+  extends: ['plugin:react/recommended'],
+  rules: {
+    // Adicione suas regras
+    'no-console': 'off',
+    'react/prop-types': 'warn'
+  }
+};
+```
+
+### Ajustar Prettier
+
+```javascript
+// .prettierrc.js
+module.exports = {
+  semi: true,
+  singleQuote: true,
+  // Adicione suas preferências
+  printWidth: 120,
+  tabWidth: 4
+};
+```
+
+### Ajustar Jest
+
+```javascript
+// jest.config.js
+module.exports = {
+  testMatch: ['**/test/**/*.test.js'],
+  // Adicione suas configurações
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80
+    }
+  }
+};
+```
+
+## Logs e Debug
+
+```bash
+# Ver detalhes (se disponível)
+DEBUG=* sea-cli setup
+
+# Salvar log
+sea-cli setup 2>&1 | tee setup.log
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Backup antes**: Faça commit antes do setup
+- **Revisar mudanças**: Use `git diff` após setup
+- **Testar gradualmente**: Execute lint e test
+- **Ajustar regras**: Customize para seu projeto
+- **Documentar**: Atualize README com novos scripts
+</Callout>
+
+## Comandos Relacionados
+
+```bash
+# Após setup, use outros comandos
+sea-cli create-module
+sea-cli create-client-extension-module
+sea-cli create-turbo
+```
+
+## Ajuda
+
+```bash
+sea-cli setup --help
+```
+
+Output:
+```
+Usage: sea-cli setup [diretorio]
+
+Adiciona configurações de qualidade a workspace existente
+
+Arguments:
+  diretorio   Caminho do workspace (padrão: .)
+
+Options:
+  -h, --help  Exibe ajuda do comando
+```
+
+## Recursos Relacionados
+
+- [Guia: Setup Workspace Existente](/docs/guides/setup-existing-workspace)
+- [create-workspace](/docs/cli-reference/create-workspace)
+- [Quickstart](/docs/getting-started/quickstart)
+- [Migration Guide](/docs/workflows/ci-cd)
+
+---
+
+**Adicione quality em projetos existentes sem quebrar nada!** Merge inteligente preserva suas configurações.

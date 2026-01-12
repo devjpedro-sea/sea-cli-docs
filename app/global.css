@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+/* SEA CLI Custom Theme - Cyan/Ocean colors */
+:root {
+  --primary: 189 94% 43%; /* Cyan 500 */
+  --primary-foreground: 0 0% 100%;
+
+  --accent: 189 94% 43%;
+  --accent-foreground: 0 0% 100%;
+
+  --ring: 189 94% 43%;
+}
+
+.dark {
+  --primary: 189 94% 43%;
+  --primary-foreground: 0 0% 100%;
+
+  --accent: 189 94% 43%;
+  --accent-foreground: 0 0% 100%;
+
+  --ring: 189 94% 43%;
+}
+
+/* Custom scrollbar with SEA colors */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(189 94% 43%);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(189 94% 35%);
+}
+
+/* Custom link colors */
+a {
+  color: hsl(189 94% 43%);
+}
+
+a:hover {
+  color: hsl(189 94% 35%);
+}
+
+/* Code block enhancements */
+pre {
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+}
+
+code {
+  font-size: 0.9em;
+}
+
+/* Callout customizations */
+[data-callout] {
+  border-left-width: 3px;
+}
+
+[data-callout="info"] {
+  border-left-color: hsl(189 94% 43%);
+}
+
+/* Button fix - ensure text is visible on cyan background */
+.bg-cyan-500 {
+  background-color: #06b6d4 !important;
+  color: white !important;
+}
+
+.bg-cyan-500:hover,
+.hover\:bg-cyan-600:hover {
+  background-color: #0891b2 !important;
+  color: white !important;
+}

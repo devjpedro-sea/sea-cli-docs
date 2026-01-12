@@ -1,0 +1,796 @@
+---
+title: sea-cli create-turbo
+description: Configura Turborepo para otimizar builds em monorepos Liferay
+---
+
+# sea-cli create-turbo
+
+Configura Turborepo no workspace Liferay para otimizar builds, testes e deploys em monorepos com múltiplos módulos e client extensions.
+
+## Sintaxe
+
+```bash
+sea-cli create-turbo
+```
+
+## Descrição
+
+O comando `create-turbo` automatiza a configuração do Turborepo:
+
+1. Instala Turborepo
+2. Cria `turbo.json` otimizado
+3. Detecta workspaces (modules, client-extensions)
+4. Configura pipeline de tasks
+5. Configura cache remoto (opcional)
+6. Integra com scripts NPM
+7. Adiciona configurações CI/CD
+
+**Benefícios:**
+- ⚡ Builds até 10x mais rápidos
+- 📦 Cache inteligente de artifacts
+- 🔄 Execução paralela de tasks
+- 🎯 Build apenas do que mudou
+- ☁️ Cache remoto compartilhado
+
+## Menu Interativo
+
+### Passo 1: Detecção
+
+```
+Detectando workspaces...
+
+✓ Encontrados 12 módulos em modules/
+✓ Encontrados 5 client extensions em client-extensions/
+
+Total: 17 workspaces
+```
+
+### Passo 2: Configuração
+
+```
+? Configurar cache remoto? (y/N): y
+? Provider de cache:
+  ❯ Vercel
+    GitHub
+    Custom
+    
+? Habilitar logs verbose? (y/N): n
+? Configurar CI/CD? (Y/n): Y
+```
+
+### Passo 3: Tasks
+
+```
+? Selecione tasks para pipeline:
+  [x] build
+  [x] test
+  [x] lint
+  [ ] deploy
+  [x] dev
+```
+
+## O Que É Criado
+
+### turbo.json
+
+```json
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["build/**", "dist/**", ".next/**"],
+      "cache": true
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "cache": true
+    },
+    "lint": {
+      "outputs": [],
+      "cache": true
+    },
+    "deploy": {
+      "dependsOn": ["build", "test"],
+      "outputs": [],
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  },
+  "globalDependencies": [
+    ".eslintrc.js",
+    "tsconfig.json"
+  ],
+  "remoteCache": {
+    "enabled": true
+  }
+}
+```
+
+### package.json (root)
+
+Atualizado com:
+
+```json
+{
+  "name": "liferay-workspace",
+  "private": true,
+  "workspaces": [
+    "modules/*",
+    "client-extensions/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev --parallel",
+    "deploy": "turbo run deploy",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^1.11.3"
+  }
+}
+```
+
+### .turbo/
+
+Diretório de cache local:
+
+```
+.turbo/
+└── cache/
+    ├── modules-produto-portlet-build-abc123.tar.gz
+    ├── modules-usuario-api-test-def456.tar.gz
+    └── ...
+```
+
+### .github/workflows/turbo.yml
+
+```yaml
+name: Turbo CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+          
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build
+        run: npm run build
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+          
+      - name: Test
+        run: npm run test
+        
+      - name: Lint
+        run: npm run lint
+```
+
+## Estrutura de Workspaces
+
+### Detecção Automática
+
+```
+workspace/
+├── modules/
+│   ├── produto-portlet/
+│   │   └── package.json
+│   ├── usuario-api/
+│   │   └── package.json
+│   └── pedido-service/
+│       └── package.json
+├── client-extensions/
+│   ├── catalogo-ce/
+│   │   └── package.json
+│   └── theme-css/
+│       └── package.json
+├── package.json           # Root workspace
+└── turbo.json
+```
+
+### package.json de Workspace
+
+```json
+{
+  "name": "produto-portlet",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "webpack --mode production",
+    "test": "jest",
+    "lint": "eslint src/",
+    "dev": "webpack serve",
+    "clean": "rm -rf build dist"
+  }
+}
+```
+
+## Pipeline de Tasks
+
+### Build
+
+```bash
+# Build todos os workspaces
+npm run build
+
+# Build workspace específico
+turbo run build --filter=produto-portlet
+
+# Build apenas o que mudou
+turbo run build --filter=[HEAD^1]
+```
+
+### Test
+
+```bash
+# Test todos
+npm run test
+
+# Test com coverage
+turbo run test -- --coverage
+
+# Test workspace específico
+turbo run test --filter=usuario-api
+```
+
+### Lint
+
+```bash
+# Lint todos
+npm run lint
+
+# Lint apenas mudanças
+turbo run lint --filter=[HEAD^1]
+```
+
+### Dev
+
+```bash
+# Dev mode em todos (paralelo)
+npm run dev
+
+# Dev workspace específico
+turbo run dev --filter=catalogo-ce
+```
+
+## Cache
+
+### Cache Local
+
+Automaticamente criado em `.turbo/cache/`:
+
+```bash
+# Ver cache
+ls -la .turbo/cache/
+
+# Limpar cache
+rm -rf .turbo/cache
+# OU
+turbo run build --force
+```
+
+### Cache Remoto
+
+#### Vercel
+
+```bash
+# Login
+npx turbo login
+
+# Link projeto
+npx turbo link
+```
+
+Adicione ao CI:
+
+```yaml
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+```
+
+#### GitHub
+
+```json
+// turbo.json
+{
+  "remoteCache": {
+    "enabled": true,
+    "signature": true
+  }
+}
+```
+
+```yaml
+# .github/workflows/turbo.yml
+- name: Cache Turbo
+  uses: actions/cache@v3
+  with:
+    path: .turbo
+    key: ${{ runner.os }}-turbo-${{ github.sha }}
+    restore-keys: |
+      ${{ runner.os }}-turbo-
+```
+
+#### Custom S3
+
+```json
+// turbo.json
+{
+  "remoteCache": {
+    "enabled": true,
+    "url": "https://cache.empresa.com"
+  }
+}
+```
+
+## Exemplos
+
+### Setup Básico
+
+```bash
+# Na raiz do workspace
+sea-cli create-turbo
+```
+
+Output:
+```
+Configurando Turborepo...
+
+Detectando workspaces:
+✓ 12 módulos
+✓ 5 client extensions
+
+Instalando turbo...
+Criando turbo.json...
+Atualizando package.json...
+Configurando cache...
+
+Turborepo configurado com sucesso!
+
+Experimente:
+  npm run build    # Build otimizado
+  npm run test     # Testes paralelos
+  npm run dev      # Dev mode
+```
+
+### Build Otimizado
+
+```bash
+# Primeira execução (sem cache)
+npm run build
+# Tempo: 120s
+
+# Segunda execução (com cache)
+npm run build
+# Tempo: 2s (cache hit 100%)
+```
+
+### Build Incremental
+
+```bash
+# Modificar apenas um módulo
+vim modules/produto-portlet/src/index.js
+
+# Build apenas o que mudou
+npm run build
+# Rebuilds: 1/17 workspaces
+```
+
+### CI/CD Otimizado
+
+```bash
+# No CI, aproveitando cache remoto
+npm run build
+# Cache hits: 15/17
+# Build time: 8s (vs 120s)
+```
+
+## Filtros
+
+### Por Workspace
+
+```bash
+# Específico
+turbo run build --filter=produto-portlet
+
+# Múltiplos
+turbo run build --filter=produto-* --filter=usuario-*
+```
+
+### Por Dependências
+
+```bash
+# Workspace e dependências
+turbo run build --filter=produto-portlet...
+
+# Dependentes do workspace
+turbo run test --filter=...produto-api
+```
+
+### Por Mudanças Git
+
+```bash
+# Desde último commit
+turbo run build --filter=[HEAD^1]
+
+# Desde main
+turbo run test --filter=[main...HEAD]
+
+# Workspaces modificados
+turbo run lint --filter=[origin/main...HEAD]
+```
+
+### Combinados
+
+```bash
+# Módulos que mudaram
+turbo run build --filter=[HEAD^1] --filter=./modules/*
+
+# Client extensions modificados
+turbo run test --filter=[main...HEAD] --filter=./client-extensions/*
+```
+
+## Otimizações
+
+### Dependências Entre Workspaces
+
+```json
+// modules/produto-service/package.json
+{
+  "dependencies": {
+    "produto-api": "workspace:*"
+  }
+}
+```
+
+Turborepo detecta e constrói na ordem correta.
+
+### Outputs
+
+```json
+// turbo.json
+{
+  "pipeline": {
+    "build": {
+      "outputs": [
+        "build/**",
+        "dist/**",
+        ".next/**",
+        "!**/*.map"
+      ]
+    }
+  }
+}
+```
+
+### Global Dependencies
+
+```json
+// turbo.json
+{
+  "globalDependencies": [
+    ".eslintrc.js",
+    "prettier.config.js",
+    "tsconfig.json",
+    "jest.config.js"
+  ]
+}
+```
+
+Se algum mudar, invalida todo o cache.
+
+### Persistent Tasks
+
+```json
+// turbo.json
+{
+  "pipeline": {
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+### Cache não funciona
+
+**Problema:**
+Cache sempre miss
+
+**Solução:**
+```bash
+# Verificar outputs
+cat turbo.json | jq '.pipeline.build.outputs'
+
+# Verificar hash
+turbo run build --dry-run
+
+# Limpar e rebuildar
+rm -rf .turbo
+npm run build
+```
+
+### Build falha em CI
+
+**Problema:**
+```
+Error: No workspaces found
+```
+
+**Solução:**
+```yaml
+# .github/workflows/turbo.yml
+- name: Install dependencies
+  run: npm ci
+  
+# Não use npm install em CI
+```
+
+### Workspace não detectado
+
+**Problema:**
+Workspace não aparece
+
+**Solução:**
+```json
+// package.json (root)
+{
+  "workspaces": [
+    "modules/*",
+    "client-extensions/*",
+    "packages/*"  // Adicione padrões faltando
+  ]
+}
+```
+
+### Cache muito grande
+
+**Problema:**
+`.turbo/cache/` muito grande
+
+**Solução:**
+```bash
+# Limpar cache antigo
+find .turbo/cache -type f -mtime +7 -delete
+
+# Ou configurar limpeza automática
+turbo prune --scope=produto-portlet
+```
+
+## Comparação de Performance
+
+### Sem Turborepo
+
+```
+Build completo:
+- modules/produto-portlet: 15s
+- modules/usuario-api: 12s
+- modules/pedido-service: 18s
+- client-extensions/catalogo: 25s
+- client-extensions/theme: 8s
+
+Total: 78s
+```
+
+### Com Turborepo (primeira vez)
+
+```
+Build completo (paralelo):
+- 5 workspaces em paralelo
+- Cache miss em todos
+
+Total: 35s (2.2x mais rápido)
+```
+
+### Com Turborepo (segunda vez)
+
+```
+Build completo (cache hit):
+- Cache: 100%
+- Restore: 5 workspaces
+
+Total: 2s (39x mais rápido)
+```
+
+### Build Incremental
+
+```
+Mudança em produto-portlet:
+- Rebuild: 1 workspace
+- Cache: 4 workspaces
+
+Total: 6s (13x mais rápido)
+```
+
+## Scripts Úteis
+
+### turbo-scripts.sh
+
+```bash
+#!/bin/bash
+# turbo-scripts.sh
+
+# Build incremental
+build-changed() {
+    turbo run build --filter=[HEAD^1]
+}
+
+# Test modificados
+test-changed() {
+    turbo run test --filter=[origin/main...HEAD]
+}
+
+# Limpar cache
+clean-cache() {
+    rm -rf .turbo/cache
+    echo "Cache limpo!"
+}
+
+# Stats
+turbo-stats() {
+    turbo run build --dry-run --graph
+}
+
+# Export
+export -f build-changed test-changed clean-cache turbo-stats
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Outputs corretos**: Configure outputs precisos para cache efetivo
+- **Global deps**: Liste todas as configs globais
+- **Cache remoto**: Use em time para compartilhar cache
+- **Filtros no CI**: Build apenas o que mudou em PRs
+- **Monitorar tamanho**: Limpe cache periodicamente
+- **Persistent tasks**: Marque dev/watch como persistent
+</Callout>
+
+## Monorepo Grande
+
+### Estratégia de Build
+
+```json
+// turbo.json
+{
+  "pipeline": {
+    "build#produto": {
+      "dependsOn": ["^build"],
+      "outputs": ["build/**"]
+    },
+    "build#admin": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    }
+  }
+}
+```
+
+### Pipelines Específicos
+
+```bash
+# Build apenas módulos de produto
+turbo run build --filter=./modules/produto-*
+
+# Test apenas client extensions
+turbo run test --filter=./client-extensions/*
+```
+
+## Integração Gradle
+
+### Executar Gradle via Turbo
+
+```json
+// modules/produto-portlet/package.json
+{
+  "scripts": {
+    "build": "../gradlew :modules:produto-portlet:build",
+    "test": "../gradlew :modules:produto-portlet:test",
+    "deploy": "../gradlew :modules:produto-portlet:deploy"
+  }
+}
+```
+
+### Cache Gradle + Turbo
+
+```json
+// turbo.json
+{
+  "pipeline": {
+    "build": {
+      "outputs": [
+        "build/libs/**",
+        ".gradle/**"
+      ]
+    }
+  }
+}
+```
+
+## Dashboard
+
+### Visualizar Graph
+
+```bash
+# Gerar graph de dependências
+turbo run build --graph
+
+# Ver em browser
+turbo run build --graph=graph.html
+open graph.html
+```
+
+### Dry Run
+
+```bash
+# Ver o que seria executado
+turbo run build --dry-run
+
+# Com filtro
+turbo run test --filter=[HEAD^1] --dry-run
+```
+
+## Comandos Relacionados
+
+```bash
+# Após configurar turbo
+npm run build              # Build otimizado
+npm run test               # Testes paralelos
+npm run lint               # Lint com cache
+npm run dev                # Dev mode
+turbo prune --scope=app    # Prune workspace
+```
+
+## Ajuda
+
+```bash
+sea-cli create-turbo --help
+```
+
+Output:
+```
+Usage: sea-cli create-turbo
+
+Configura Turborepo para monorepo Liferay
+
+Detecta e configura automaticamente workspaces
+
+Options:
+  -h, --help  Exibe ajuda do comando
+```
+
+## Recursos Relacionados
+
+- [Guia: Configurar Turborepo](/docs/guides/configure-turborepo)
+- [Turborepo Docs](https://turbo.build/repo/docs)
+- [Monorepo CI/CD](/docs/workflows/ci-cd)
+- [Performance](/docs/advanced/performance)
+
+---
+
+**Builds 10x mais rápidos com Turborepo!** Cache inteligente, execução paralela, build incremental.

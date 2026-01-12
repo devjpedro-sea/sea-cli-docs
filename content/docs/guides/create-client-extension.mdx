@@ -1,0 +1,548 @@
+---
+title: Criar Client Extension
+description: Crie módulos client extension para Liferay 7.4+ com configuração completa
+---
+
+# Criar Client Extension Module
+
+Crie client extensions modernos para Liferay 7.4+ com todas as configurações de qualidade de código.
+
+## Visão Geral
+
+Client Extensions são a forma moderna de customizar o Liferay 7.4+. O SEA CLI cria client extensions prontos para desenvolvimento com ESLint, Prettier, Jest e build configurados.
+
+<Callout type="info">
+**Novidade do Liferay 7.4+:** Client Extensions substituem os portlets tradicionais em muitos casos.
+</Callout>
+
+## O que são Client Extensions?
+
+Client Extensions são aplicações front-end que rodam independentemente do Liferay, mas se integram perfeitamente:
+
+- **Independentes**: Rodam fora do servidor Liferay
+- **Modernos**: Usam frameworks atuais (React, Vue, etc)
+- **Escaláveis**: Deploy separado do core
+- **Flexíveis**: Múltiplas tecnologias
+
+## Tipos de Client Extensions
+
+O SEA CLI suporta:
+
+- **Custom Element**: Componentes web customizados
+- **Theme CSS**: Customização de temas
+- **Theme Favicon**: Customização de favicon
+- **JS**: Scripts JavaScript customizados
+- **OAuth**: Aplicações OAuth
+
+## Quando usar?
+
+- Desenvolvimento Liferay 7.4+
+- Aplicações front-end modernas
+- Microservices architecture
+- Deploy independente do Liferay
+- Múltiplas tecnologias no mesmo portal
+
+## Pré-requisitos
+
+- Liferay 7.4 ou superior
+- Workspace configurado
+- SEA CLI instalado
+- Node.js 16.0.0+
+
+## Como Criar
+
+<Steps>
+
+### Entrar na pasta client-extensions
+
+```bash
+cd seu-workspace/client-extensions
+```
+
+### Executar o comando
+
+Modo interativo:
+```bash
+sea-cli init
+# Escolher: Criar módulo client extension
+```
+
+Ou diretamente:
+```bash
+sea-cli create-client-extension-module
+```
+
+### Informar detalhes
+
+```
+? Nome do client extension: my-custom-element
+? Tipo: Custom Element
+? Framework: React
+```
+
+### Aguardar criação
+
+O SEA CLI irá:
+1. Criar estrutura de diretórios
+2. Instalar dependências
+3. Configurar build
+4. Configurar lint e testes
+5. Gerar arquivos de configuração Liferay
+
+</Steps>
+
+## Estrutura Gerada
+
+```
+client-extensions/my-custom-element/
+├── src/
+│   ├── index.js              # Entry point
+│   ├── App.js                # Componente principal
+│   ├── components/           # Componentes React
+│   └── styles/               # CSS/SCSS
+├── public/
+│   └── index.html           # HTML base
+├── __tests__/               # Testes
+│   └── App.test.js
+├── build/                   # Build output
+├── client-extension.yaml    # Config Liferay
+├── package.json             # Dependencies
+├── webpack.config.js        # Build config
+├── jest.config.js           # Test config
+└── README.md                # Documentação
+```
+
+## Configuração Liferay
+
+### client-extension.yaml
+
+Arquivo de configuração do Liferay:
+
+```yaml
+my-custom-element:
+    name: My Custom Element
+    type: customElement
+    htmlElementName: my-custom-element
+    portletCategoryName: category.client-extensions
+    urls:
+        - index.*.js
+    useESM: true
+```
+
+### Propriedades
+
+- **name**: Nome exibido no Liferay
+- **type**: Tipo de client extension
+- **htmlElementName**: Tag HTML do componente
+- **urls**: Arquivos JavaScript a carregar
+- **useESM**: Usar ES Modules
+
+## Build e Deploy
+
+### Scripts Disponíveis
+
+```json
+{
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development",
+    "lint": "eslint src --fix",
+    "test": "jest",
+    "deploy": "npm run build && cp -r build/* ../../bundles/osgi/client-extensions"
+  }
+}
+```
+
+### Build para Produção
+
+```bash
+npm run build
+```
+
+Gera arquivos otimizados em `/build`.
+
+### Deploy para Liferay
+
+```bash
+npm run deploy
+```
+
+Copia arquivos para pasta de deploy do Liferay.
+
+### Desenvolvimento Local
+
+```bash
+npm run dev
+```
+
+Inicia servidor de desenvolvimento com hot reload.
+
+## Desenvolvimento
+
+### 1. Instalar Dependências
+
+```bash
+cd my-custom-element
+npm install
+```
+
+### 2. Desenvolver
+
+Edite arquivos em `src/`:
+
+```jsx
+// src/App.js
+import React from 'react';
+
+function App() {
+  return (
+    <div className="my-custom-element">
+      <h1>Meu Client Extension</h1>
+      <p>Rodando no Liferay 7.4+</p>
+    </div>
+  );
+}
+
+export default App;
+```
+
+### 3. Testar Localmente
+
+```bash
+npm run dev
+```
+
+Acesse: http://localhost:8080
+
+### 4. Escrever Testes
+
+```jsx
+// __tests__/App.test.js
+import { render, screen } from '@testing-library/react';
+import App from '../src/App';
+
+describe('App', () => {
+  it('deve renderizar título', () => {
+    render(<App />);
+    expect(screen.getByText('Meu Client Extension')).toBeInTheDocument();
+  });
+});
+```
+
+### 5. Build e Deploy
+
+```bash
+npm run build
+npm run deploy
+```
+
+## Integração com Liferay
+
+### 1. Deploy do Client Extension
+
+Após build, deploy no Liferay:
+
+```bash
+# Opção 1: Script automático
+npm run deploy
+
+# Opção 2: Manual
+cp -r build/* $LIFERAY_HOME/osgi/client-extensions/
+```
+
+### 2. Adicionar à Página
+
+No Liferay:
+1. Editar página
+2. Adicionar widget
+3. Buscar "My Custom Element"
+4. Adicionar à página
+
+### 3. Configurar (se necessário)
+
+Acessar configuração do widget para ajustar propriedades.
+
+## Webpack Configuration
+
+### webpack.config.js
+
+Configuração de build:
+
+```js
+module.exports = {
+  entry: './src/index.js',
+  output: {
+    path: path.resolve(__dirname, 'build'),
+    filename: 'index.[contenthash].js',
+    library: {
+      type: 'module'
+    }
+  },
+  experiments: {
+    outputModule: true
+  },
+  module: {
+    rules: [
+      {
+        test: /\.jsx?$/,
+        exclude: /node_modules/,
+        use: 'babel-loader'
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader']
+      }
+    ]
+  }
+}
+```
+
+## Custom Element Avançado
+
+### Props do Liferay
+
+Receber props do Liferay:
+
+```jsx
+import React from 'react';
+
+class MyElement extends HTMLElement {
+  connectedCallback() {
+    const userId = this.getAttribute('user-id');
+    const theme = this.getAttribute('theme');
+    
+    // Renderizar React com props
+    ReactDOM.render(
+      <App userId={userId} theme={theme} />,
+      this
+    );
+  }
+}
+
+customElements.define('my-custom-element', MyElement);
+```
+
+### Comunicação com Liferay
+
+Usar Liferay.Util:
+
+```js
+// Disparar evento
+Liferay.fire('myCustomEvent', {
+  data: 'valor'
+});
+
+// Escutar evento
+Liferay.on('liferayEvent', (event) => {
+  console.log(event.data);
+});
+```
+
+## Tipos de Client Extensions
+
+### 1. Custom Element
+
+Componente web reutilizável:
+
+```yaml
+type: customElement
+htmlElementName: my-widget
+```
+
+### 2. Theme CSS
+
+Customização de tema:
+
+```yaml
+type: themeCSS
+clayURL: css/clay.css
+mainURL: css/main.css
+```
+
+### 3. Theme Favicon
+
+Customização de favicon:
+
+```yaml
+type: themeFavicon
+url: images/favicon.ico
+```
+
+### 4. JavaScript
+
+Scripts customizados:
+
+```yaml
+type: globalJS
+url: js/global.js
+```
+
+## Testes
+
+### Estrutura de Testes
+
+```
+__tests__/
+├── App.test.js
+├── components/
+│   ├── Header.test.js
+│   └── Footer.test.js
+└── integration/
+    └── liferay.test.js
+```
+
+### Executar Testes
+
+```bash
+# Todos os testes
+npm test
+
+# Com cobertura
+npm test -- --coverage
+
+# Watch mode
+npm test -- --watch
+```
+
+## Turborepo (Monorepo)
+
+Para múltiplos client extensions:
+
+```bash
+cd client-extensions
+sea-cli create-turbo
+```
+
+Configura Turborepo para build paralelo.
+
+## Exemplo Completo
+
+### React + Material-UI
+
+```jsx
+import React from 'react';
+import { Button, Card } from '@mui/material';
+
+function App({ userId }) {
+  return (
+    <Card>
+      <h2>Bem-vindo, Usuário {userId}</h2>
+      <Button variant="contained" color="primary">
+        Ação
+      </Button>
+    </Card>
+  );
+}
+
+export default App;
+```
+
+### Vue.js
+
+```vue
+<template>
+  <div class="my-extension">
+    <h1>{{ title }}</h1>
+    <button @click="handleClick">Clique</button>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      title: 'Meu Client Extension Vue'
+    }
+  },
+  methods: {
+    handleClick() {
+      console.log('Clicado!');
+    }
+  }
+}
+</script>
+```
+
+## Troubleshooting
+
+### Client Extension não aparece
+
+**Problema:** Não encontra widget no Liferay
+
+**Solução:**
+- Verificar deploy correto
+- Conferir `client-extension.yaml`
+- Verificar logs do Liferay
+- Restart do servidor
+
+### Build falha
+
+**Problema:** Erro ao executar build
+
+**Solução:**
+```bash
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+```
+
+### Hot reload não funciona
+
+**Problema:** Mudanças não aparecem
+
+**Solução:**
+```bash
+# Reiniciar dev server
+npm run dev
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Componentes pequenos**: Facilita manutenção
+- **Testes completos**: Garante qualidade
+- **Build otimizado**: Performance em produção
+- **Versionamento**: Controle de versões
+- **Documentação**: Documente APIs e props
+</Callout>
+
+## Performance
+
+### Code Splitting
+
+```js
+// Lazy loading
+const HeavyComponent = React.lazy(() => 
+  import('./components/HeavyComponent')
+);
+
+function App() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <HeavyComponent />
+    </Suspense>
+  );
+}
+```
+
+### Bundle Size
+
+```bash
+# Analisar bundle
+npm run build -- --analyze
+
+# Verificar tamanho
+ls -lh build/
+```
+
+## Recursos Relacionados
+
+- [Criar Módulo](/docs/guides/create-module)
+- [Configurar Turborepo](/docs/guides/configure-turborepo)
+- [Testing](/docs/features/testing)
+- [Liferay Client Extensions Docs](https://learn.liferay.com/dxp/latest/en/building-applications/client-extensions.html)
+
+---
+
+**Client Extension criado!** Desenvolva aplicações modernas para Liferay 7.4+.
