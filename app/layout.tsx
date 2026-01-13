@@ -9,6 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://sea-cli-docs.vercel.app"),
   title: {
     default: "SEA CLI - Automação de Qualidade para Liferay",
     template: "%s | SEA CLI",
