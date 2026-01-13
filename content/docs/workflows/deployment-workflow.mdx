@@ -183,16 +183,16 @@ set -e
 SERVER="user@staging.empresa.com"
 LIFERAY_HOME="/opt/liferay"
 
-echo "🚀 Deploying to Staging..."
+echo "Deploying to Staging..."
 
 # 1. Build
-echo "📦 Building..."
+echo "Building..."
 npm ci
 npm run build:prod
 ./gradlew clean build
 
 # 2. Upload artifacts
-echo "📤 Uploading..."
+echo "Uploading..."
 rsync -avz --progress \
   modules/*/build/libs/*.jar \
   $SERVER:$LIFERAY_HOME/deploy/
@@ -202,10 +202,10 @@ rsync -avz --progress \
   $SERVER:$LIFERAY_HOME/osgi/client-extensions/
 
 # 3. Verificar deploy
-echo "✅ Checking deployment..."
+echo "Checking deployment..."
 ssh $SERVER "tail -n 50 $LIFERAY_HOME/logs/liferay.*.log"
 
-echo "✅ Deployment completed!"
+echo "Deployment completed!"
 ```
 
 ### 4. Smoke Tests
@@ -216,12 +216,12 @@ echo "✅ Deployment completed!"
 
 STAGING_URL="https://staging.empresa.com"
 
-echo "🔍 Running smoke tests..."
+echo "Running smoke tests..."
 
 # 1. Health check
 response=$(curl -s -o /dev/null -w "%{http_code}" $STAGING_URL)
 if [ $response -ne 200 ]; then
-  echo "❌ Health check failed: $response"
+  echo "Health check failed: $response"
   exit 1
 fi
 
@@ -232,7 +232,7 @@ curl -f $STAGING_URL/web/guest/produtos || exit 1
 # 3. Verificar módulos
 # ... testes específicos
 
-echo "✅ All smoke tests passed!"
+echo "All smoke tests passed!"
 ```
 
 ## Deploy Produção
@@ -240,10 +240,10 @@ echo "✅ All smoke tests passed!"
 ### 1. Checklist Pré-Deploy
 
 <Callout type="warning">
-  **Antes de fazer deploy em produção:** - ✅ Testes passando (unit +
-  integration + E2E) - ✅ Code review aprovado - ✅ QA aprovado em staging - ✅
-  Backup do banco de dados - ✅ Backup dos módulos atuais - ✅ Plano de rollback
-  preparado - ✅ Janela de manutenção agendada - ✅ Stakeholders notificados
+  **Antes de fazer deploy em produção:** - Testes passando (unit +
+  integration + E2E) - Code review aprovado - QA aprovado em staging -
+  Backup do banco de dados - Backup dos módulos atuais - Plano de rollback
+  preparado - Janela de manutenção agendada - Stakeholders notificados
 </Callout>
 
 ### 2. Backup
@@ -256,7 +256,7 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/backups/liferay/$TIMESTAMP"
 LIFERAY_HOME="/opt/liferay"
 
-echo "📦 Creating backup..."
+echo "Creating backup..."
 
 # 1. Banco de dados
 mysqldump -u liferay -p liferay_prod > $BACKUP_DIR/database.sql
@@ -273,7 +273,7 @@ cp -r $LIFERAY_HOME/osgi/modules/ \
 cp -r $LIFERAY_HOME/osgi/configs/ \
   $BACKUP_DIR/configs/
 
-echo "✅ Backup completed: $BACKUP_DIR"
+echo "Backup completed: $BACKUP_DIR"
 ```
 
 ### 3. Deploy com Blue-Green
@@ -285,7 +285,7 @@ echo "✅ Backup completed: $BACKUP_DIR"
 # Blue = Produção atual
 # Green = Nova versão
 
-echo "🔵 Blue-Green Deployment"
+echo "Blue-Green Deployment"
 
 # 1. Deploy no Green (standby)
 echo "Deploying to Green environment..."
@@ -308,7 +308,7 @@ sleep 30
 
 # 5. Se OK, Blue vira standby
 # Se falhar, rollback para Blue
-echo "✅ Deployment completed!"
+echo "Deployment completed!"
 ```
 
 ### 4. Deploy Canary
@@ -338,7 +338,7 @@ update_traffic_split 100
 #!/bin/bash
 # post-deploy-check.sh
 
-echo "🔍 Post-deployment verification..."
+echo "Post-deployment verification..."
 
 # 1. Health checks
 curl -f https://prod.empresa.com/health || exit 1
@@ -355,7 +355,7 @@ ssh user@prod "tail -n 100 /opt/liferay/logs/liferay.*.log | grep ERROR"
 # 5. Métricas
 curl https://monitoring.empresa.com/api/metrics?env=prod
 
-echo "✅ Verification completed!"
+echo "Verification completed!"
 ```
 
 ## Rollback
@@ -373,7 +373,7 @@ if [ -z "$BACKUP_DIR" ]; then
   exit 1
 fi
 
-echo "⚠️  Rolling back to $BACKUP_DIR"
+echo " Rolling back to $BACKUP_DIR"
 
 # 1. Parar Liferay
 systemctl stop liferay
@@ -395,7 +395,7 @@ systemctl start liferay
 # 6. Verificar
 tail -f /opt/liferay/logs/liferay.*.log
 
-echo "✅ Rollback completed!"
+echo "Rollback completed!"
 ```
 
 ### 2. Rollback Blue-Green
@@ -407,7 +407,7 @@ aws elb modify-listener \
   --listener-port 443 \
   --new-target-group blue-tg
 
-echo "✅ Traffic switched back to Blue"
+echo "Traffic switched back to Blue"
 ```
 
 ### 3. Rollback Git

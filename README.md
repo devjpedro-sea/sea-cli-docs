@@ -77,17 +77,6 @@ sea-cli-docs/
 └── next.config.mjs             # Configuração Next.js
 ```
 
-## Tema e Branding
-
-O projeto usa o tema customizado da **SEA Tecnologia**:
-
-- **Cor primária**: Cyan (#06b6d4) - representa o oceano
-- **Fonte**: Inter
-- **Ícone**: 🌊 (onda/mar)
-- **Dark mode**: Habilitado por padrão
-
-As cores e estilos estão definidos em `app/global.css`.
-
 ## Adicionando Conteúdo
 
 ### Criar nova página
@@ -128,30 +117,6 @@ Descrição
 </Cards>
 ```
 
-## Status da Documentação
-
-### Fase 1 - Completa
-
-- [x] Estrutura de diretórios
-- [x] Navegação configurada
-- [x] Tema SEA (cyan)
-- [x] Metadata e SEO
-- [x] Landing page
-- [x] Getting Started completo
-  - [x] Introdução
-  - [x] Instalação
-  - [x] Quickstart
-  - [x] Troubleshooting
-- [x] Index pages criados
-
-### Próximas Fases
-
-- [ ] **Fase 2**: Conteúdo Core (Guides e CLI Reference)
-- [ ] **Fase 3**: Features Detalhadas
-- [ ] **Fase 4**: Workflows e Avançado
-- [ ] **Fase 5**: FAQ, Changelog, Contributing
-- [ ] **Fase 6**: Screenshots, GIFs, Polimento final
-
 ## Scripts Disponíveis
 
 ```bash
@@ -180,7 +145,3 @@ Esta documentação é mantida pela **SEA Tecnologia**. Para contribuir:
 ## 📄 Licença
 
 MIT © SEA Tecnologia
-
----
-
-**Desenvolvido com ♥ pela SEA Tecnologia**

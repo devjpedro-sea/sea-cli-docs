@@ -614,13 +614,13 @@ function createPackage(name, type = "lib") {
     `export const name = '${pkgName}';\n`
   );
 
-  console.log(`✅ Package ${pkgName} created at ${pkgDir}`);
+  console.log(`Package ${pkgName} created at ${pkgDir}`);
 }
 
 // Uso: node tools/generators/package.js meu-pacote
 const packageName = process.argv[2];
 if (!packageName) {
-  console.error("❌ Usage: node package.js <package-name>");
+  console.error("Usage: node package.js <package-name>");
   process.exit(1);
 }
 
@@ -721,4 +721,4 @@ npx madge --image graph.svg packages/
 
 ---
 
-**Monorepos bem estruturados = produtividade maximizada!** 🚀
+**Monorepos bem estruturados = produtividade maximizada!** 

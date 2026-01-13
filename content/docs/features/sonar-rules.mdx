@@ -192,26 +192,26 @@ sonar.vulnerabilities.maximum=0
 ```javascript
 // Blocker: Variável não definida
 function example() {
-  console.log(undefinedVar);  // ❌ ReferenceError
+  console.log(undefinedVar);  // ReferenceError
 }
 
 // Solução
 function example() {
   const undefinedVar = 'value';
-  console.log(undefinedVar);  // ✅
+  console.log(undefinedVar);  //
 }
 ```
 
 ```javascript
 // Critical: Promise sem catch
 async function fetchData() {
-  return fetch('/api/data');  // ❌ Uncaught promise
+  return fetch('/api/data');  // Uncaught promise
 }
 
 // Solução
 async function fetchData() {
   try {
-    return await fetch('/api/data');  // ✅
+    return await fetch('/api/data');  //
   } catch (error) {
     console.error(error);
     throw error;
@@ -224,27 +224,27 @@ async function fetchData() {
 ```javascript
 // Critical: eval() usage
 const code = getUserInput();
-eval(code);  // ❌ Code injection vulnerability
+eval(code);  // Code injection vulnerability
 
 // Solução: Evitar eval()
-const data = JSON.parse(getUserInput());  // ✅
+const data = JSON.parse(getUserInput());  //
 ```
 
 ```javascript
 // Major: innerHTML com user input
-element.innerHTML = userInput;  // ❌ XSS vulnerability
+element.innerHTML = userInput;  // XSS vulnerability
 
 // Solução
-element.textContent = userInput;  // ✅
+element.textContent = userInput;  //
 // OU sanitize
-element.innerHTML = DOMPurify.sanitize(userInput);  // ✅
+element.innerHTML = DOMPurify.sanitize(userInput);  //
 ```
 
 ### Code Smells
 
 ```javascript
 // Major: Função muito complexa
-function processOrder(order) {  // ❌ Cognitive Complexity: 25
+function processOrder(order) {  // Cognitive Complexity: 25
   if (order.type === 'online') {
     if (order.payment === 'card') {
       if (order.amount > 100) {
@@ -257,7 +257,7 @@ function processOrder(order) {  // ❌ Cognitive Complexity: 25
 }
 
 // Solução: Quebrar em funções menores
-function processOrder(order) {  // ✅ Complexity: 5
+function processOrder(order) {  // Complexity: 5
   validateOrder(order);
   processPayment(order);
   shipOrder(order);
@@ -272,16 +272,16 @@ function validateOrder(order) {
 
 ```javascript
 // Minor: Código duplicado
-function formatUserName(user) {  // ❌ Duplicated
+function formatUserName(user) {  // Duplicated
   return `${user.firstName} ${user.lastName}`.trim();
 }
 
-function formatCustomerName(customer) {  // ❌ Duplicated
+function formatCustomerName(customer) {  // Duplicated
   return `${customer.firstName} ${customer.lastName}`.trim();
 }
 
 // Solução
-function formatFullName(person) {  // ✅ DRY
+function formatFullName(person) {  // DRY
   return `${person.firstName} ${person.lastName}`.trim();
 }
 ```
@@ -294,13 +294,13 @@ function formatFullName(person) {  // ✅ DRY
 // Critical: Hook condicional
 function MyComponent({ condition }) {
   if (condition) {
-    useState(0);  // ❌ Hook dentro de condição
+    useState(0);  // Hook dentro de condição
   }
 }
 
 // Solução
 function MyComponent({ condition }) {
-  const [value, setValue] = useState(0);  // ✅
+  const [value, setValue] = useState(0);  //
   
   if (condition) {
     setValue(1);
@@ -312,14 +312,14 @@ function MyComponent({ condition }) {
 
 ```javascript
 // Major: PropTypes faltando
-function Product({ name, price }) {  // ❌ No PropTypes
+function Product({ name, price }) {  // No PropTypes
   return <div>{name}: {price}</div>;
 }
 
 // Solução
 import PropTypes from 'prop-types';
 
-function Product({ name, price }) {  // ✅
+function Product({ name, price }) {  //
   return <div>{name}: {price}</div>;
 }
 
@@ -333,12 +333,12 @@ Product.propTypes = {
 
 ```javascript
 // Major: Key faltando
-products.map(product => (  // ❌ Missing key
+products.map(product => (  // Missing key
   <div>{product.name}</div>
 ));
 
 // Solução
-products.map(product => (  // ✅
+products.map(product => (  //
   <div key={product.id}>{product.name}</div>
 ));
 ```
@@ -677,14 +677,14 @@ New Code (Last 7 days)
 ### Quality Gate Status
 
 ```
-✅ PASSED
+PASSED
 
 Conditions:
-✅ Coverage on New Code ≥ 80%: 82.3%
-✅ Duplicated Lines on New Code ≤ 3%: 1.2%
-✅ Maintainability Rating = A
-✅ Reliability Rating = A
-✅ Security Rating = A
+Coverage on New Code ≥ 80%: 82.3%
+Duplicated Lines on New Code ≤ 3%: 1.2%
+Maintainability Rating = A
+Reliability Rating = A
+Security Rating = A
 ```
 
 ## Troubleshooting

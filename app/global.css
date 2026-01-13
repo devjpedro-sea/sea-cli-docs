@@ -19,8 +19,8 @@
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -29,7 +29,7 @@
 
 ::-webkit-scrollbar-thumb {
   background: hsl(189 94% 43%);
-  border-radius: 5px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -77,11 +77,8 @@ code {
   color: white !important;
 }
 
-[data-sidebar] {
+#nd-sidebar {
   width: auto !important;
-  min-width: 240px !important;
-  max-width: 300px !important;
-  flex-shrink: 0 !important;
 }
 
 @layer overrides {

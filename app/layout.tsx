@@ -40,7 +40,25 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR" className={inter.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen" suppressHydrationWarning>
-        <RootProvider>{children}</RootProvider>
+        <RootProvider
+          i18n={{
+            locale: "pt-BR",
+            translations: {
+              toc: "Nesta página",
+              search: "Pesquisar",
+              chooseTheme: "Escolher Tema",
+              chooseLanguage: "Escolher Idioma",
+              editOnGithub: "Editar no GitHub",
+              lastUpdate: "Última Atualização",
+              nextPage: "Próxima Página",
+              previousPage: "Página Anterior",
+              searchNoResult: "Nenhum resultado encontrado",
+              tocNoHeadings: "Sem cabeçalhos",
+            },
+          }}
+        >
+          {children}
+        </RootProvider>
       </body>
     </html>
   );

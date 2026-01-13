@@ -18,7 +18,7 @@ Ao contribuir para este projeto, você concorda em seguir nosso [Código de Cond
 - **Qualidade**: Mantenha altos padrões de código e documentação
 - **Transparência**: Comunique-se abertamente sobre mudanças
 
-## 🚀 Como Contribuir
+## Como Contribuir
 
 ### Reportar Bugs
 
@@ -135,11 +135,11 @@ git checkout -b fix/meu-bug
 
 **Siga as boas práticas:**
 
-- ✅ Escreva código limpo e legível
-- ✅ Adicione testes para novas features
-- ✅ Atualize documentação
-- ✅ Siga o style guide do projeto
-- ✅ Mantenha commits atômicos
+- Escreva código limpo e legível
+- Adicione testes para novas features
+- Atualize documentação
+- Siga o style guide do projeto
+- Mantenha commits atômicos
 
 #### 5. Testar
 
@@ -208,10 +208,10 @@ git push origin feature/minha-feature
 
 ## Tipo de Mudança
 
-- [ ] 🐛 Bug fix
-- [ ] ✨ Nova feature
-- [ ] 🔧 Breaking change
-- [ ] 📚 Documentação
+- [ ] - Bug fix
+- [ ] - Nova feature
+- [ ] - Breaking change
+- [ ] - Documentação
 
 ## Checklist
 
@@ -236,7 +236,7 @@ Related to #456
 [Informações adicionais]
 ```
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 sea-cli/
@@ -272,7 +272,7 @@ sea-cli/
   README.md
 ```
 
-## 🧪 Testes
+## Testes
 
 ### Estrutura de Testes
 
@@ -328,7 +328,7 @@ npm test -- --verbose
 - **Lines**: 80%
 - **Statements**: 80%
 
-## 📝 Documentação
+## Documentação
 
 ### Atualizar Docs
 
@@ -391,12 +391,12 @@ sea init --eslint
 
 ````
 
-## 🎨 Style Guide
+## Style Guide
 
 ### TypeScript
 
 ```typescript
-// ✅ Bom
+//   - Bom
 export class SeaCLI {
   private readonly config: SeaConfig;
 
@@ -409,7 +409,7 @@ export class SeaCLI {
 
     try {
       await this.setupTools(options);
-      Logger.success('✅ Initialization complete!');
+      Logger.success('  - Initialization complete!');
     } catch (error) {
       Logger.error('Failed to initialize:', error);
       throw error;
@@ -424,7 +424,7 @@ export class SeaCLI {
   }
 }
 
-// ❌ Evitar
+//   - Evitar
 export class SeaCLI {
   config: any;  // Usar tipos específicos
 
@@ -469,7 +469,7 @@ const MAX_RETRIES = 3;
 ### Imports
 
 ```typescript
-// ✅ Ordem correta
+//   - Ordem correta
 // 1. Node built-ins
 import fs from "fs";
 import path from "path";
@@ -489,7 +489,7 @@ import type { SeaConfig } from "./types";
 ### Error Handling
 
 ```typescript
-// ✅ Bom
+//   - Bom
 try {
   await riskyOperation();
 } catch (error) {
@@ -502,7 +502,7 @@ try {
   throw new SeaError("Operation failed", { cause: error });
 }
 
-// ❌ Evitar
+//   - Evitar
 try {
   await riskyOperation();
 } catch (e) {
@@ -511,7 +511,7 @@ try {
 }
 ```
 
-## 🔄 Processo de Review
+## Processo de Review
 
 ### O que Avaliamos
 
@@ -549,12 +549,12 @@ try {
 
 PRs precisam de:
 
-- ✅ 2 aprovações de mantenedores
-- ✅ CI pipeline verde
-- ✅ Sem conflitos
-- ✅ Changelog atualizado (se feature/fix)
+- 2 aprovações de mantenedores
+- CI pipeline verde
+- Sem conflitos
+- Changelog atualizado (se feature/fix)
 
-## 🏆 Reconhecimento
+## Reconhecimento
 
 Contribuidores são creditados em:
 
@@ -568,7 +568,7 @@ Top contributors ganham:
 - Acesso prioritário a betas
 - Menção em redes sociais
 
-## 📞 Contato
+## Contato
 
 ### Canais de Comunicação
 
@@ -582,7 +582,7 @@ Top contributors ganham:
 - **João Pedro** - [@joao-pedro](https://gitlab.seatecnologia.com.br/joao-pedro)
 - **SEA Team** - [@sea-team](https://gitlab.seatecnologia.com.br/sea-team)
 
-## 📚 Recursos
+## Recursos
 
 ### Para Contribuidores
 
@@ -599,7 +599,7 @@ Top contributors ganham:
 - [ESLint](https://eslint.org/)
 - [Prettier](https://prettier.io/)
 
-## 🎉 Primeiros Passos
+## Primeiros Passos
 
 ### Issues para Iniciantes
 
@@ -624,21 +624,21 @@ Procure por labels:
 - [ ] Push e criar PR
 - [ ] Aguardar review
 - [ ] Responder feedback
-- [ ] Celebrar! 🎉
+- [ ] Celebrar!
 
-## 🙏 Agradecimentos
+## Agradecimentos
 
 Obrigado por contribuir para tornar o SEA CLI melhor para todos!
 
 Toda contribuição, grande ou pequena, faz diferença. Seja ela:
 
-- 🐛 Reportar um bug
-- 💡 Sugerir uma feature
-- 📝 Melhorar documentação
-- 💻 Contribuir com código
-- 🧪 Escrever testes
-- 🎨 Melhorar UI/UX
-- 🌍 Traduzir docs
+- Reportar um bug
+- Sugerir uma feature
+- Melhorar documentação
+- Contribuir com código
+- Escrever testes
+- Melhorar UI/UX
+- Traduzir docs
 
 **Você é incrível!** 🌊
 

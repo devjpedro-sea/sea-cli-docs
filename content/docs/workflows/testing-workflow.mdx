@@ -30,12 +30,12 @@ Guia completo de estratégias de testes, desde unitários até E2E, usando Jest 
 ### O Que Testar
 
 ```javascript
-// ✅ Funções puras
+// Funções puras
 export function calculateDiscount(price, percentage) {
   return price * (1 - percentage / 100);
 }
 
-// ✅ Componentes isolados
+// Componentes isolados
 export function ProductCard({ product }) {
   return (
     <div className="product-card">
@@ -45,7 +45,7 @@ export function ProductCard({ product }) {
   );
 }
 
-// ✅ Utils e helpers
+// Utils e helpers
 export function formatCurrency(value) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -485,9 +485,9 @@ File                      | % Stmts | % Branch | % Funcs | % Lines |
 --------------------------|---------|----------|---------|---------|
 All files                 |   85.23 |    78.45 |   82.11 |   85.67 |
  components               |   90.12 |    85.23 |   88.45 |   90.34 |
-  ProductList.jsx         |   95.45 |    92.31 |   94.12 |   95.67 | ✅
-  ProductCard.jsx         |   84.23 |    78.56 |   82.45 |   85.12 | ⚠️
- utils                    |   78.34 |    65.23 |   72.45 |   79.12 | ❌
+  ProductList.jsx         |   95.45 |    92.31 |   94.12 |   95.67 |
+  ProductCard.jsx         |   84.23 |    78.56 |   82.45 |   85.12 |
+ utils                    |   78.34 |    65.23 |   72.45 |   79.12 |
   api.js                  |   82.12 |    70.45 |   78.23 |   83.45 |
   format.js               |   74.56 |    60.01 |   66.67 |   74.89 |
 --------------------------|---------|----------|---------|---------|
@@ -495,9 +495,9 @@ All files                 |   85.23 |    78.45 |   82.11 |   85.67 |
 
 **Análise:**
 
-- ✅ ProductList: Bem testado
-- ⚠️ ProductCard: Precisa mais testes
-- ❌ Utils: Crítico - aumentar coverage
+- ProductList: Bem testado
+- ProductCard: Precisa mais testes
+- Utils: Crítico - aumentar coverage
 
 ## Organização de Testes
 
@@ -635,7 +635,7 @@ await waitFor(
 );
 
 // Não usar apenas timeout
-await new Promise((resolve) => setTimeout(resolve, 1000)); // ❌
+await new Promise((resolve) => setTimeout(resolve, 1000)); //
 ```
 
 ### Memory Leaks

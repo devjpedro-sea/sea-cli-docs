@@ -379,9 +379,9 @@ const { Logger } = require("@sea/cli");
 Logger.setVerbose(true);
 
 Logger.info("Starting process...");
-Logger.success("✅ Process completed!");
-Logger.warn("⚠️  Warning: deprecated feature");
-Logger.error("❌ Error occurred");
+Logger.success("Process completed!");
+Logger.warn(" Warning: deprecated feature");
+Logger.error("Error occurred");
 Logger.debug("Debug information");
 ```
 
@@ -413,9 +413,9 @@ const { Validator } = require("@sea/cli");
 const result = Validator.validateProjectName("meu-projeto");
 
 if (result.valid) {
-  console.log("✅ Valid project name");
+  console.log("Valid project name");
 } else {
-  console.error("❌ Invalid project name:", result.errors);
+  console.error("Invalid project name:", result.errors);
 }
 ```
 
@@ -576,7 +576,7 @@ export type ClientExtensionType =
 import { SeaCLI, Logger, FileManager } from "@sea/cli";
 
 async function setupProject() {
-  Logger.info("🚀 Starting project setup...");
+  Logger.info("Starting project setup...");
 
   const cli = new SeaCLI({
     cwd: process.cwd(),
@@ -585,7 +585,7 @@ async function setupProject() {
 
   try {
     // 1. Criar workspace
-    Logger.info("📦 Creating workspace...");
+    Logger.info("Creating workspace...");
     await cli.createWorkspace({
       name: "meu-projeto",
       type: "turbo",
@@ -594,7 +594,7 @@ async function setupProject() {
     });
 
     // 2. Criar módulo
-    Logger.info("🔧 Creating module...");
+    Logger.info("Creating module...");
     await cli.createModule({
       name: "produto-portlet",
       type: "mvc-portlet",
@@ -611,14 +611,14 @@ async function setupProject() {
     });
 
     // 4. Configurar qualidade
-    Logger.info("✨ Setting up quality tools...");
+    Logger.info("Setting up quality tools...");
     await cli.setup({
       configure: ["eslint", "prettier", "jest", "husky"],
     });
 
-    Logger.success("✅ Project setup completed!");
+    Logger.success("Project setup completed!");
   } catch (error) {
-    Logger.error("❌ Setup failed:", error);
+    Logger.error("Setup failed:", error);
     throw error;
   }
 }
@@ -685,4 +685,4 @@ try {
 
 ---
 
-**API programática para automação completa!** 🔧
+**API programática para automação completa!** 
