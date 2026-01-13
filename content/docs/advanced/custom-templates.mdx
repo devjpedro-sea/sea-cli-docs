@@ -1,0 +1,675 @@
+---
+title: Templates Customizados
+description: Crie e personalize templates para o SEA CLI
+---
+
+# Templates Customizados
+
+Aprenda a criar templates customizados para adaptar o SEA CLI às necessidades específicas do seu projeto ou organização.
+
+## Visão Geral
+
+O SEA CLI usa templates para gerar arquivos de configuração. Você pode criar seus próprios templates para:
+
+- 📝 Personalizar regras ESLint/Prettier
+- 🎨 Adaptar configurações de teste
+- 🏢 Aplicar padrões da empresa
+- 🔧 Adicionar ferramentas específicas
+
+## Estrutura de Templates
+
+### Localização Padrão
+
+```
+seu-projeto/
+  .sea/
+    templates/
+      eslint/
+        .eslintrc.js
+        .eslintignore
+      prettier/
+        .prettierrc
+        .prettierignore
+      jest/
+        jest.config.js
+      husky/
+        pre-commit
+        commit-msg
+      typescript/
+        tsconfig.json
+```
+
+### Hierarquia de Templates
+
+```
+1. Templates locais (.sea/templates/)
+   ↓ sobrescreve
+2. Templates do usuário (~/.sea/templates/)
+   ↓ sobrescreve
+3. Templates padrão (SEA CLI)
+```
+
+## Criando Templates
+
+### 1. Template ESLint Customizado
+
+```javascript
+// .sea/templates/eslint/.eslintrc.js
+module.exports = {
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+    jest: true,
+  },
+  extends: [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier",
+  ],
+  parser: "@typescript-eslint/parser",
+  parserOptions: {
+    ecmaVersion: "latest",
+    sourceType: "module",
+    ecmaFeatures: {
+      jsx: true,
+    },
+    project: "./tsconfig.json", // Custom: TypeScript project
+  },
+  plugins: [
+    "react",
+    "@typescript-eslint",
+    "prettier",
+    "import", // Custom: Import plugin
+  ],
+  rules: {
+    // Custom rules da empresa
+    "no-console": ["warn", { allow: ["warn", "error"] }],
+    "no-debugger": "error",
+    "prefer-const": "error",
+
+    // TypeScript custom rules
+    "@typescript-eslint/explicit-function-return-type": "warn",
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+      },
+    ],
+
+    // React custom rules
+    "react/react-in-jsx-scope": "off",
+    "react/prop-types": "off",
+    "react/jsx-uses-react": "off",
+
+    // Import rules customizadas
+    "import/order": [
+      "error",
+      {
+        groups: [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index",
+        ],
+        "newlines-between": "always",
+        alphabetize: {
+          order: "asc",
+          caseInsensitive: true,
+        },
+      },
+    ],
+  },
+  settings: {
+    react: {
+      version: "detect",
+    },
+    // Custom: Import resolver
+    "import/resolver": {
+      typescript: {
+        alwaysTryTypes: true,
+        project: "./tsconfig.json",
+      },
+    },
+  },
+  overrides: [
+    // Custom: Regras específicas para testes
+    {
+      files: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"],
+      env: {
+        jest: true,
+      },
+      rules: {
+        "@typescript-eslint/no-explicit-any": "off",
+      },
+    },
+    // Custom: Regras para arquivos de config
+    {
+      files: ["*.config.js", "*.config.ts"],
+      rules: {
+        "@typescript-eslint/no-var-requires": "off",
+      },
+    },
+  ],
+};
+```
+
+### 2. Template Prettier Customizado
+
+```json
+// .sea/templates/prettier/.prettierrc
+{
+  "semi": true,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "arrowParens": "always",
+  "bracketSpacing": true,
+  "endOfLine": "lf",
+  "jsxSingleQuote": false,
+  "proseWrap": "preserve",
+  "quoteProps": "as-needed",
+  "overrides": [
+    {
+      "files": "*.json",
+      "options": {
+        "printWidth": 80
+      }
+    },
+    {
+      "files": "*.md",
+      "options": {
+        "proseWrap": "always",
+        "printWidth": 80
+      }
+    }
+  ]
+}
+```
+
+### 3. Template Jest Customizado
+
+```javascript
+// .sea/templates/jest/jest.config.js
+module.exports = {
+  preset: "ts-jest",
+  testEnvironment: "jsdom",
+  roots: ["<rootDir>/src"],
+  testMatch: [
+    "**/__tests__/**/*.+(ts|tsx|js)",
+    "**/?(*.)+(spec|test).+(ts|tsx|js)",
+  ],
+  transform: {
+    "^.+\\.(ts|tsx)$": "ts-jest",
+  },
+  collectCoverageFrom: [
+    "src/**/*.{js,jsx,ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/index.ts",
+    "!src/**/*.stories.tsx",
+    // Custom: Ignorar pastas específicas
+    "!src/generated/**",
+    "!src/types/**",
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+  setupFilesAfterEnv: ["<rootDir>/src/setupTests.ts"],
+  moduleNameMapper: {
+    // Custom: Path aliases
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@components/(.*)$": "<rootDir>/src/components/$1",
+    "^@utils/(.*)$": "<rootDir>/src/utils/$1",
+    "^@hooks/(.*)$": "<rootDir>/src/hooks/$1",
+    "^@services/(.*)$": "<rootDir>/src/services/$1",
+    // Custom: Mocks de assets
+    "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+    "\\.(jpg|jpeg|png|gif|svg)$": "<rootDir>/__mocks__/fileMock.js",
+  },
+  globals: {
+    "ts-jest": {
+      tsconfig: {
+        jsx: "react",
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      },
+    },
+  },
+  // Custom: Reporters customizados
+  reporters: [
+    "default",
+    [
+      "jest-junit",
+      {
+        outputDirectory: "test-results",
+        outputName: "junit.xml",
+      },
+    ],
+  ],
+};
+```
+
+### 4. Template Husky Customizado
+
+```bash
+#!/bin/sh
+# .sea/templates/husky/pre-commit
+
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Custom: Verificar branch
+current_branch=$(git symbolic-ref --short HEAD)
+protected_branches="main|master|production"
+
+if echo "$current_branch" | grep -qE "^($protected_branches)$"; then
+  echo "❌ Cannot commit directly to protected branch: $current_branch"
+  exit 1
+fi
+
+# Lint staged files
+echo "📝 Running lint-staged..."
+npx lint-staged
+
+# Custom: Verificar imports não utilizados
+echo "🔍 Checking for unused imports..."
+npx ts-prune | grep -v "used in module" && {
+  echo "❌ Found unused imports. Please remove them."
+  exit 1
+} || echo "✅ No unused imports found"
+
+# Custom: Verificar console.log
+echo "🔍 Checking for console.log..."
+git diff --cached --name-only --diff-filter=ACM | \
+  grep -E '\.(js|ts|jsx|tsx)$' | \
+  xargs grep -n "console\.log" && {
+  echo "❌ Found console.log statements. Please remove them."
+  exit 1
+} || echo "✅ No console.log found"
+
+# Custom: Verificar tamanho dos arquivos
+echo "📦 Checking file sizes..."
+large_files=$(git diff --cached --name-only --diff-filter=ACM | \
+  xargs ls -l 2>/dev/null | \
+  awk '$5 > 1048576 {print $9, "(" $5/1048576 "MB)"}')
+
+if [ -n "$large_files" ]; then
+  echo "⚠️  Warning: Large files detected:"
+  echo "$large_files"
+  echo "Consider using Git LFS for large files."
+fi
+
+echo "✅ Pre-commit checks passed!"
+```
+
+## Variáveis de Template
+
+Use variáveis para criar templates dinâmicos:
+
+### Variáveis Disponíveis
+
+```javascript
+// Template com variáveis
+module.exports = {
+  // {{PROJECT_NAME}} - Nome do projeto
+  displayName: '{{PROJECT_NAME}}',
+
+  // {{AUTHOR}} - Autor do projeto
+  author: '{{AUTHOR}}',
+
+  // {{VERSION}} - Versão do SEA CLI
+  generatedBy: 'SEA CLI v{{VERSION}}',
+
+  // {{DATE}} - Data de geração
+  createdAt: '{{DATE}}',
+
+  // {{WORKSPACE_TYPE}} - Tipo do workspace (gradle, turbo)
+  workspaceType: '{{WORKSPACE_TYPE}}',
+
+  // {{PACKAGES}} - Lista de pacotes
+  packages: [{{PACKAGES}}],
+};
+```
+
+### Exemplo com Variáveis
+
+```javascript
+// .sea/templates/custom/package.json
+{
+  "name": "{{PROJECT_NAME}}",
+  "version": "1.0.0",
+  "description": "Generated by SEA CLI v{{VERSION}}",
+  "author": "{{AUTHOR}}",
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "format": "prettier --write .",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "jest": "^29.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0"
+  }
+}
+```
+
+## Template CLI
+
+### Comando para Template
+
+```bash
+# Criar template a partir do projeto atual
+sea template create --name meu-template
+
+# Listar templates disponíveis
+sea template list
+
+# Usar template customizado
+sea init --template meu-template
+
+# Exportar template
+sea template export meu-template --output ./meu-template.zip
+
+# Importar template
+sea template import ./meu-template.zip
+```
+
+### Configuração de Template
+
+```yaml
+# .sea/template.yml
+name: empresa-template
+description: Template padrão da Empresa XYZ
+version: 1.0.0
+author: Equipe DevOps
+
+files:
+  - source: eslint/.eslintrc.js
+    destination: .eslintrc.js
+
+  - source: prettier/.prettierrc
+    destination: .prettierrc
+
+  - source: jest/jest.config.js
+    destination: jest.config.js
+
+  - source: husky/pre-commit
+    destination: .husky/pre-commit
+    executable: true
+
+variables:
+  PROJECT_NAME:
+    description: Nome do projeto
+    required: true
+
+  AUTHOR:
+    description: Autor do projeto
+    default: "{{GIT_USER}}"
+
+  COVERAGE_THRESHOLD:
+    description: Threshold de cobertura de testes
+    default: 80
+
+hooks:
+  pre-generate:
+    - npm install
+
+  post-generate:
+    - npm run lint --fix
+    - git add .
+```
+
+## Templates Compartilhados
+
+### Repositório de Templates
+
+```bash
+# Criar repositório de templates
+mkdir sea-templates
+cd sea-templates
+
+# Estrutura
+sea-templates/
+  empresa-default/
+    .sea/
+      template.yml
+      templates/
+        eslint/
+        prettier/
+        jest/
+  empresa-react/
+  empresa-node/
+  README.md
+```
+
+### Usar Template de Repositório
+
+```bash
+# Clonar e usar
+git clone https://gitlab.com/empresa/sea-templates.git
+
+sea init --template ./sea-templates/empresa-default
+
+# Ou via URL
+sea init --template https://gitlab.com/empresa/sea-templates#empresa-default
+```
+
+## Condicionais em Templates
+
+### Lógica Condicional
+
+```javascript
+// Template com condicionais
+module.exports = {
+  {{#if TYPESCRIPT}}
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint'],
+  extends: [
+    'plugin:@typescript-eslint/recommended',
+  ],
+  {{/if}}
+
+  {{#if REACT}}
+  extends: [
+    'plugin:react/recommended',
+    'plugin:react-hooks/recommended',
+  ],
+  settings: {
+    react: {
+      version: 'detect',
+    },
+  },
+  {{/if}}
+
+  rules: {
+    {{#if STRICT_MODE}}
+    'no-console': 'error',
+    'no-debugger': 'error',
+    {{else}}
+    'no-console': 'warn',
+    'no-debugger': 'warn',
+    {{/if}}
+  },
+};
+```
+
+## Validação de Templates
+
+### Schema de Validação
+
+```javascript
+// .sea/template-schema.js
+module.exports = {
+  validate(template) {
+    const errors = [];
+
+    // Validar estrutura
+    if (!template.name) {
+      errors.push("Template deve ter um nome");
+    }
+
+    if (!template.version) {
+      errors.push("Template deve ter uma versão");
+    }
+
+    // Validar arquivos obrigatórios
+    const requiredFiles = [".eslintrc.js", ".prettierrc", "jest.config.js"];
+
+    requiredFiles.forEach((file) => {
+      if (!template.files.includes(file)) {
+        errors.push(`Arquivo obrigatório ausente: ${file}`);
+      }
+    });
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
+  },
+};
+```
+
+## Testes de Templates
+
+### Testar Template
+
+```javascript
+// __tests__/template.test.js
+const { generateFromTemplate } = require("../src/template-engine");
+
+describe("Template ESLint", () => {
+  it("deve gerar .eslintrc.js válido", () => {
+    const result = generateFromTemplate("eslint", {
+      PROJECT_NAME: "test-project",
+      TYPESCRIPT: true,
+      REACT: true,
+    });
+
+    expect(result).toContain("@typescript-eslint/parser");
+    expect(result).toContain("plugin:react/recommended");
+  });
+
+  it("deve aplicar variáveis corretamente", () => {
+    const result = generateFromTemplate("package.json", {
+      PROJECT_NAME: "meu-projeto",
+      VERSION: "1.0.0",
+    });
+
+    const pkg = JSON.parse(result);
+    expect(pkg.name).toBe("meu-projeto");
+  });
+});
+```
+
+## Exemplos Práticos
+
+### Template para Microserviços
+
+```javascript
+// .sea/templates/microservice/.eslintrc.js
+module.exports = {
+  env: {
+    node: true,
+    es2021: true,
+    jest: true,
+  },
+  extends: [
+    "eslint:recommended",
+    "@typescript-eslint/recommended",
+    "plugin:security/recommended", // Security plugin
+    "prettier",
+  ],
+  rules: {
+    // Regras específicas para microserviços
+    "no-process-exit": "error",
+    "no-process-env": "warn",
+    "security/detect-object-injection": "error",
+    "security/detect-non-literal-require": "error",
+  },
+};
+```
+
+### Template para Monorepo
+
+```javascript
+// .sea/templates/monorepo/jest.config.js
+module.exports = {
+  projects: ["<rootDir>/packages/*/jest.config.js"],
+  coverageDirectory: "<rootDir>/coverage",
+  collectCoverageFrom: ["packages/*/src/**/*.{ts,tsx}"],
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
+    },
+  },
+};
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+  ### Recomendações - **Versionamento**: Sempre versione seus templates -
+  **Documentação**: Documente variáveis e opções disponíveis - **Validação**:
+  Valide templates antes de distribuir - **Testes**: Teste templates em
+  diferentes cenários - **Manutenção**: Mantenha templates atualizados com as
+  versões das ferramentas - **Compartilhamento**: Use repositórios Git para
+  compartilhar templates - **Modularidade**: Crie templates reutilizáveis e
+  componíveis
+</Callout>
+
+## Troubleshooting
+
+### Template Não Aplicado
+
+```bash
+# Verificar cache
+rm -rf ~/.sea/cache
+
+# Modo verbose
+sea init --template custom --verbose
+
+# Validar template
+sea template validate ./meu-template
+```
+
+### Conflitos de Variáveis
+
+```bash
+# Listar variáveis disponíveis
+sea template inspect meu-template
+
+# Fornecer variáveis explicitamente
+sea init --template custom \
+  --var PROJECT_NAME=meu-projeto \
+  --var AUTHOR="João Silva"
+```
+
+## Recursos Relacionados
+
+- [Monorepo Strategies](/docs/advanced/monorepo-strategies)
+- [CLI Reference](/docs/cli-reference)
+- [Configuration](/docs/features/automation-scripts)
+
+---
+
+**Customize o SEA CLI para suas necessidades!** Templates flexíveis e reutilizáveis.

@@ -1,0 +1,718 @@
+---
+title: ESLint + Prettier
+description: Configuração completa de linting e formatação de código
+---
+
+# ESLint + Prettier
+
+Configuração integrada de ESLint e Prettier para manter código consistente, limpo e sem erros em projetos Liferay.
+
+## Visão Geral
+
+O SEA CLI configura automaticamente:
+
+- **ESLint**: Análise estática de código JavaScript/JSP
+- **Prettier**: Formatação automática de código
+- **Integração**: ESLint + Prettier trabalhando juntos
+- **Editor**: Configuração para VS Code e IDEs
+
+## ESLint
+
+### Configuração Gerada
+
+```javascript
+// .eslintrc.js
+module.exports = {
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+    jest: true
+  },
+  extends: [
+    'eslint:recommended',
+    'plugin:react/recommended',
+    'plugin:jsx-a11y/recommended',
+    'prettier'
+  ],
+  parserOptions: {
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+    ecmaFeatures: {
+      jsx: true
+    }
+  },
+  plugins: [
+    'react',
+    'jsx-a11y',
+    'prettier'
+  ],
+  rules: {
+    'prettier/prettier': 'error',
+    'no-console': 'warn',
+    'no-unused-vars': 'warn',
+    'react/prop-types': 'warn',
+    'react/react-in-jsx-scope': 'off'
+  },
+  settings: {
+    react: {
+      version: 'detect'
+    }
+  }
+};
+```
+
+### Regras Principais
+
+#### Erros (error)
+
+```javascript
+{
+  'prettier/prettier': 'error',        // Força formatação Prettier
+  'no-undef': 'error',                 // Variáveis não definidas
+  'no-dupe-keys': 'error',             // Chaves duplicadas em objetos
+  'no-duplicate-case': 'error',        // Cases duplicados em switch
+  'valid-typeof': 'error'              // typeof válido
+}
+```
+
+#### Avisos (warn)
+
+```javascript
+{
+  'no-console': 'warn',                // console.log em produção
+  'no-unused-vars': 'warn',            // Variáveis não usadas
+  'react/prop-types': 'warn',          // PropTypes faltando
+  'jsx-a11y/alt-text': 'warn'          // Alt em imagens
+}
+```
+
+#### Desabilitados (off)
+
+```javascript
+{
+  'react/react-in-jsx-scope': 'off'    // React 17+ não precisa import
+}
+```
+
+### Plugins Inclusos
+
+#### eslint-plugin-react
+
+Regras para React:
+
+```javascript
+{
+  'react/jsx-uses-react': 'error',
+  'react/jsx-uses-vars': 'error',
+  'react/jsx-key': 'warn',
+  'react/no-deprecated': 'warn',
+  'react/no-direct-mutation-state': 'error'
+}
+```
+
+#### eslint-plugin-jsx-a11y
+
+Acessibilidade:
+
+```javascript
+{
+  'jsx-a11y/alt-text': 'warn',
+  'jsx-a11y/anchor-is-valid': 'warn',
+  'jsx-a11y/click-events-have-key-events': 'warn',
+  'jsx-a11y/no-static-element-interactions': 'warn'
+}
+```
+
+### Executar ESLint
+
+```bash
+# Lint todos os arquivos
+npm run lint:fix
+
+# Apenas verificar (sem fix)
+npx eslint .
+
+# Arquivo específico
+npx eslint src/App.js
+
+# Diretório específico
+npx eslint modules/
+
+# Com fix automático
+npx eslint . --fix
+
+# Ver regras aplicadas
+npx eslint --print-config src/App.js
+```
+
+### Ignorar Arquivos
+
+```javascript
+// .eslintignore
+node_modules/
+build/
+dist/
+coverage/
+*.min.js
+*.bundle.js
+.turbo/
+.next/
+```
+
+### Customizar Regras
+
+```javascript
+// .eslintrc.js
+module.exports = {
+  extends: ['eslint:recommended', 'prettier'],
+  rules: {
+    // Sobrescrever regras
+    'no-console': 'off',              // Permitir console
+    'no-unused-vars': ['warn', {      // Customizar unused vars
+      argsIgnorePattern: '^_'
+    }],
+    
+    // Adicionar regras
+    'max-len': ['warn', { code: 120 }],
+    'prefer-const': 'warn',
+    'no-var': 'error'
+  }
+};
+```
+
+## Prettier
+
+### Configuração Gerada
+
+```javascript
+// .prettierrc.js
+module.exports = {
+  semi: true,
+  singleQuote: true,
+  tabWidth: 2,
+  useTabs: false,
+  trailingComma: 'es5',
+  printWidth: 80,
+  bracketSpacing: true,
+  arrowParens: 'always',
+  endOfLine: 'lf',
+  jsxSingleQuote: false,
+  jsxBracketSameLine: false
+};
+```
+
+### Opções Principais
+
+#### semi
+
+```javascript
+// true
+const name = 'John';
+
+// false
+const name = 'John'
+```
+
+#### singleQuote
+
+```javascript
+// true
+const message = 'Hello';
+
+// false
+const message = "Hello";
+```
+
+#### tabWidth
+
+```javascript
+// 2 (padrão)
+function example() {
+  return true;
+}
+
+// 4
+function example() {
+    return true;
+}
+```
+
+#### trailingComma
+
+```javascript
+// 'es5'
+const obj = {
+  a: 1,
+  b: 2,  // vírgula
+};
+
+// 'none'
+const obj = {
+  a: 1,
+  b: 2   // sem vírgula
+};
+
+// 'all'
+const fn = (
+  a,
+  b,  // vírgula em parâmetros
+) => {};
+```
+
+#### printWidth
+
+```javascript
+// 80 (padrão)
+const longText = 'Este é um texto que será quebrado em 80 caracteres'
+  + ' automaticamente';
+
+// 120
+const longText = 'Este é um texto que será quebrado em 120 caracteres e portanto tem mais espaço na mesma linha';
+```
+
+### Executar Prettier
+
+```bash
+# Formatar todos
+npm run lint:format
+
+# Apenas verificar
+npx prettier --check .
+
+# Formatar específico
+npx prettier --write src/App.js
+
+# Formatar diretório
+npx prettier --write modules/
+
+# Ver diferenças
+npx prettier --check . --loglevel debug
+```
+
+### Ignorar Arquivos
+
+```
+# .prettierignore
+node_modules/
+build/
+dist/
+coverage/
+package-lock.json
+pnpm-lock.yaml
+*.min.js
+*.bundle.js
+.turbo/
+```
+
+### Customizar Prettier
+
+```javascript
+// .prettierrc.js
+module.exports = {
+  // Preferências da equipe
+  semi: false,              // Sem ponto e vírgula
+  singleQuote: true,        // Aspas simples
+  printWidth: 120,          // Linhas mais longas
+  tabWidth: 4,              // Tab de 4 espaços
+  trailingComma: 'all',     // Vírgulas sempre
+  
+  // Override por tipo de arquivo
+  overrides: [
+    {
+      files: '*.json',
+      options: {
+        tabWidth: 2
+      }
+    },
+    {
+      files: '*.md',
+      options: {
+        printWidth: 100
+      }
+    }
+  ]
+};
+```
+
+## Integração ESLint + Prettier
+
+### Como Funciona
+
+1. ESLint analisa código
+2. ESLint detecta problemas de formatação
+3. Prettier formata código
+4. ESLint valida resultado
+
+### eslint-config-prettier
+
+Desabilita regras do ESLint que conflitam com Prettier:
+
+```javascript
+// .eslintrc.js
+module.exports = {
+  extends: [
+    'eslint:recommended',
+    'prettier'  // SEMPRE por último
+  ]
+};
+```
+
+### eslint-plugin-prettier
+
+Roda Prettier como regra do ESLint:
+
+```javascript
+// .eslintrc.js
+module.exports = {
+  plugins: ['prettier'],
+  rules: {
+    'prettier/prettier': 'error'
+  }
+};
+```
+
+### Executar Juntos
+
+```bash
+# ESLint + Prettier juntos
+npm run lint
+
+# Equivalente a:
+npx eslint . --fix && npx prettier --write .
+```
+
+## Integração com Editores
+
+### VS Code
+
+#### .vscode/settings.json
+
+```json
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
+```
+
+#### Extensões Recomendadas
+
+```json
+// .vscode/extensions.json
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig"
+  ]
+}
+```
+
+### IntelliJ IDEA / WebStorm
+
+1. **Settings → Languages & Frameworks → JavaScript → Code Quality Tools → ESLint**
+   - ✅ Automatic ESLint configuration
+   - ✅ Run eslint --fix on save
+
+2. **Settings → Languages & Frameworks → JavaScript → Prettier**
+   - ✅ Prettier package: `node_modules/prettier`
+   - ✅ Run on save for files: `**/*.{js,jsx,ts,tsx,json,css,md}`
+
+### EditorConfig
+
+```ini
+# .editorconfig
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_size = 2
+```
+
+## Lint JSP
+
+### Configuração para JSP
+
+```javascript
+// .eslintrc.js
+module.exports = {
+  overrides: [
+    {
+      files: ['**/*.jsp'],
+      processor: 'jsp',
+      rules: {
+        'no-undef': 'off'  // Variáveis do Liferay
+      }
+    }
+  ]
+};
+```
+
+### Exemplo JSP
+
+```html
+<%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+
+<div class="product-list">
+  <c:forEach items="${products}" var="product">
+    <div class="product-item">
+      <h3>${product.name}</h3>
+      <p>${product.description}</p>
+    </div>
+  </c:forEach>
+</div>
+
+<script>
+  // JavaScript em JSP também é lintado
+  const productCount = ${products.size()};
+  console.log('Total de produtos:', productCount);
+</script>
+```
+
+## Scripts Avançados
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "lint": "eslint . --fix && prettier --write .",
+    "lint:check": "eslint . && prettier --check .",
+    "lint:fix": "eslint . --fix",
+    "lint:format": "prettier --write .",
+    "lint:staged": "lint-staged",
+    "lint:ci": "eslint . && prettier --check .",
+    "lint:report": "eslint . --format html --output-file eslint-report.html"
+  }
+}
+```
+
+### lint-staged
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  '*.{js,jsx,ts,tsx}': [
+    'eslint --fix',
+    'prettier --write'
+  ],
+  '*.{json,md,css,scss}': [
+    'prettier --write'
+  ],
+  '*.jsp': [
+    'eslint --fix'
+  ]
+};
+```
+
+## Troubleshooting
+
+### Conflito ESLint/Prettier
+
+**Problema:**
+```
+Delete `␍` prettier/prettier
+```
+
+**Solução:**
+```javascript
+// .prettierrc.js
+module.exports = {
+  endOfLine: 'auto'  // Ou 'lf' no Linux/Mac
+};
+```
+
+### Regra não aplicada
+
+**Problema:**
+Regra configurada mas não funciona
+
+**Solução:**
+```bash
+# Limpar cache do ESLint
+rm -rf node_modules/.cache/eslint
+
+# Reexecutar
+npx eslint . --fix
+```
+
+### Formatação inconsistente
+
+**Problema:**
+Arquivo formatado diferente toda vez
+
+**Solução:**
+```bash
+# Verificar versão Prettier
+npx prettier --version
+
+# Atualizar para mesma versão no time
+npm install prettier@3.2.5 --save-dev --save-exact
+```
+
+### JSP não lintado
+
+**Problema:**
+ESLint ignora arquivos JSP
+
+**Solução:**
+```javascript
+// .eslintrc.js
+module.exports = {
+  overrides: [
+    {
+      files: ['**/*.jsp'],
+      processor: 'jsp'
+    }
+  ]
+};
+```
+
+## CI/CD
+
+### GitHub Actions
+
+```yaml
+name: Lint
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: ESLint
+        run: npm run lint:fix
+        
+      - name: Prettier
+        run: npm run lint:format
+        
+      - name: Check for changes
+        run: |
+          git diff --exit-code || (echo "Code not formatted!" && exit 1)
+```
+
+### GitLab CI
+
+```yaml
+lint:
+  stage: test
+  script:
+    - npm ci
+    - npm run lint:ci
+  only:
+    - merge_requests
+    - main
+```
+
+### Pre-commit Hook
+
+```bash
+# .husky/pre-commit
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+npm run lint:staged
+```
+
+## Métricas e Relatórios
+
+### ESLint Report
+
+```bash
+# HTML Report
+npx eslint . --format html --output-file eslint-report.html
+
+# JSON Report
+npx eslint . --format json --output-file eslint-report.json
+
+# Checkstyle (para SonarQube)
+npx eslint . --format checkstyle --output-file eslint-checkstyle.xml
+```
+
+### Análise de Código
+
+```bash
+# Contar erros/warnings
+npx eslint . --format json | jq '.[] | .errorCount, .warningCount'
+
+# Listar arquivos com problemas
+npx eslint . --format json | jq '.[] | select(.errorCount > 0) | .filePath'
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Configuração consistente**: Mesmo .eslintrc e .prettierrc no time
+- **Format on save**: Ative nos editores
+- **Pre-commit hook**: Force lint antes de commit
+- **CI/CD check**: Valide no pipeline
+- **Regras incrementais**: Adicione regras gradualmente
+- **Documentar exceções**: Comente `eslint-disable`
+</Callout>
+
+### Desabilitar Regras
+
+```javascript
+// Linha específica
+const x = 1; // eslint-disable-line no-unused-vars
+
+// Próxima linha
+// eslint-disable-next-line no-console
+console.log('Debug');
+
+// Bloco
+/* eslint-disable no-console */
+console.log('Start');
+console.log('End');
+/* eslint-enable no-console */
+
+// Arquivo inteiro
+/* eslint-disable */
+```
+
+## Recursos Relacionados
+
+- [ESLint Docs](https://eslint.org/docs/latest/)
+- [Prettier Docs](https://prettier.io/docs/en/)
+- [Husky + lint-staged](/docs/features/husky-lint-staged)
+- [Workflows](/docs/workflows/development-workflow)
+
+---
+
+**Código limpo e consistente automaticamente!** ESLint encontra problemas, Prettier formata.

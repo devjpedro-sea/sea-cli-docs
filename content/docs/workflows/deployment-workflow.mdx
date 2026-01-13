@@ -1,0 +1,694 @@
+---
+title: Workflow de Deploy
+description: Estratégias de deploy para ambientes Liferay
+---
+
+# Workflow de Deploy
+
+Guia completo de deploy de aplicações Liferay, desde ambiente local até produção, com estratégias de CI/CD e rollback.
+
+## Ambientes
+
+### Estrutura Típica
+
+```
+Development (Local)
+    ↓
+Staging (QA/Homologação)
+    ↓
+Production (Produção)
+```
+
+### Configurações por Ambiente
+
+```properties
+# gradle-local.properties (não commitado)
+
+## Development
+liferay.workspace.home.dir=/opt/liferay-dev
+app.server.tomcat.port=8080
+app.server.debug.port=5005
+
+## Staging
+# liferay.workspace.home.dir=/opt/liferay-staging
+# app.server.tomcat.port=8080
+
+## Production
+# liferay.workspace.home.dir=/opt/liferay-prod
+# app.server.tomcat.port=8080
+```
+
+## Deploy Local
+
+### 1. Build do Módulo
+
+```bash
+# Build módulo específico
+./gradlew :modules:produto-portlet:build
+
+# Build todos os módulos
+./gradlew build
+
+# Build limpo
+./gradlew clean build
+```
+
+### 2. Deploy Automático
+
+```bash
+# Deploy módulo (auto-deploy)
+./gradlew :modules:produto-portlet:deploy
+
+# Deploy todos
+./gradlew deploy
+
+# Com watch (auto-redeploy ao salvar)
+./gradlew :modules:produto-portlet:watch
+```
+
+### 3. Verificar Deploy
+
+```bash
+# Monitorar logs
+tail -f $LIFERAY_HOME/logs/liferay.*.log
+
+# Ver módulo instalado
+# No Liferay, ir para:
+# Control Panel → System → Gogo Shell
+
+# Listar bundles
+lb | grep produto
+
+# Ver status
+lb 123  # ID do bundle
+
+# Verificar porta
+ss 123  # Service do bundle
+```
+
+### 4. Hot Deploy
+
+```bash
+# Copiar JAR manualmente
+cp modules/produto-portlet/build/libs/produto-portlet-1.0.0.jar \
+   $LIFERAY_HOME/deploy/
+
+# Liferay detecta e instala automaticamente
+# Verificar logs para confirmar
+```
+
+## Deploy Client Extensions
+
+### 1. Build Client Extension
+
+```bash
+# Entrar no client extension
+cd client-extensions/catalogo-ce
+
+# Build
+npm run build
+
+# Output em: build/static/
+```
+
+### 2. Deploy Local
+
+```bash
+# Via Gradle
+./gradlew deployClientExtensions
+
+# OU copiar manualmente
+cp -r build/static/* \
+   $LIFERAY_HOME/osgi/client-extensions/catalogo-ce/
+```
+
+### 3. Configurar URL Dev
+
+```yaml
+# client-extension.yaml
+catalogo-ce:
+  type: customElement
+  urls:
+    # Desenvolvimento (hot reload)
+    - "http://localhost:3000/main.js"
+    # Produção
+    # - "/o/catalogo-ce/main.js"
+```
+
+### 4. Dev Server
+
+```bash
+# Iniciar dev server com hot reload
+npm run dev
+
+# Webpack dev server em http://localhost:3000
+# Liferay carrega daqui em desenvolvimento
+```
+
+## Deploy Staging
+
+### 1. Preparação
+
+```bash
+# Criar tag de release
+git tag -a v1.2.0 -m "Release v1.2.0"
+git push origin v1.2.0
+
+# Ou branch de release
+git checkout -b release/v1.2.0
+git push origin release/v1.2.0
+```
+
+### 2. Build para Staging
+
+```bash
+# Build production
+NODE_ENV=production npm run build
+
+# Build Gradle
+./gradlew clean build -Pprofile=staging
+
+# Gerar artifacts
+./gradlew assemble
+```
+
+### 3. Deploy Automatizado
+
+```bash
+#!/bin/bash
+# deploy-staging.sh
+
+set -e
+
+SERVER="user@staging.empresa.com"
+LIFERAY_HOME="/opt/liferay"
+
+echo "🚀 Deploying to Staging..."
+
+# 1. Build
+echo "📦 Building..."
+npm ci
+npm run build:prod
+./gradlew clean build
+
+# 2. Upload artifacts
+echo "📤 Uploading..."
+rsync -avz --progress \
+  modules/*/build/libs/*.jar \
+  $SERVER:$LIFERAY_HOME/deploy/
+
+rsync -avz --progress \
+  client-extensions/*/build/static/ \
+  $SERVER:$LIFERAY_HOME/osgi/client-extensions/
+
+# 3. Verificar deploy
+echo "✅ Checking deployment..."
+ssh $SERVER "tail -n 50 $LIFERAY_HOME/logs/liferay.*.log"
+
+echo "✅ Deployment completed!"
+```
+
+### 4. Smoke Tests
+
+```bash
+#!/bin/bash
+# smoke-tests.sh
+
+STAGING_URL="https://staging.empresa.com"
+
+echo "🔍 Running smoke tests..."
+
+# 1. Health check
+response=$(curl -s -o /dev/null -w "%{http_code}" $STAGING_URL)
+if [ $response -ne 200 ]; then
+  echo "❌ Health check failed: $response"
+  exit 1
+fi
+
+# 2. Testar endpoints
+curl -f $STAGING_URL/o/headless-delivery/v1.0/products || exit 1
+curl -f $STAGING_URL/web/guest/produtos || exit 1
+
+# 3. Verificar módulos
+# ... testes específicos
+
+echo "✅ All smoke tests passed!"
+```
+
+## Deploy Produção
+
+### 1. Checklist Pré-Deploy
+
+<Callout type="warning">
+  **Antes de fazer deploy em produção:** - ✅ Testes passando (unit +
+  integration + E2E) - ✅ Code review aprovado - ✅ QA aprovado em staging - ✅
+  Backup do banco de dados - ✅ Backup dos módulos atuais - ✅ Plano de rollback
+  preparado - ✅ Janela de manutenção agendada - ✅ Stakeholders notificados
+</Callout>
+
+### 2. Backup
+
+```bash
+#!/bin/bash
+# backup-prod.sh
+
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/backups/liferay/$TIMESTAMP"
+LIFERAY_HOME="/opt/liferay"
+
+echo "📦 Creating backup..."
+
+# 1. Banco de dados
+mysqldump -u liferay -p liferay_prod > $BACKUP_DIR/database.sql
+
+# 2. Document Library
+rsync -avz $LIFERAY_HOME/data/document_library/ \
+  $BACKUP_DIR/document_library/
+
+# 3. Módulos atuais
+cp -r $LIFERAY_HOME/osgi/modules/ \
+  $BACKUP_DIR/modules/
+
+# 4. Configs
+cp -r $LIFERAY_HOME/osgi/configs/ \
+  $BACKUP_DIR/configs/
+
+echo "✅ Backup completed: $BACKUP_DIR"
+```
+
+### 3. Deploy com Blue-Green
+
+```bash
+#!/bin/bash
+# blue-green-deploy.sh
+
+# Blue = Produção atual
+# Green = Nova versão
+
+echo "🔵 Blue-Green Deployment"
+
+# 1. Deploy no Green (standby)
+echo "Deploying to Green environment..."
+ssh user@liferay-green "cd /opt/liferay && ./deploy.sh"
+
+# 2. Smoke tests no Green
+echo "Running smoke tests on Green..."
+./smoke-tests.sh https://green.empresa.com
+
+# 3. Switch traffic (Load Balancer)
+echo "Switching traffic to Green..."
+aws elb modify-listener \
+  --load-balancer-name my-lb \
+  --listener-port 443 \
+  --new-target-group green-tg
+
+# 4. Monitorar
+echo "Monitoring Green environment..."
+sleep 30
+
+# 5. Se OK, Blue vira standby
+# Se falhar, rollback para Blue
+echo "✅ Deployment completed!"
+```
+
+### 4. Deploy Canary
+
+```bash
+# Gradualmente aumentar tráfego para nova versão
+
+# 10% do tráfego
+update_traffic_split 10
+
+# Monitorar métricas
+sleep 300
+
+# 50% do tráfego
+update_traffic_split 50
+
+# Monitorar métricas
+sleep 300
+
+# 100% do tráfego
+update_traffic_split 100
+```
+
+### 5. Verificação Pós-Deploy
+
+```bash
+#!/bin/bash
+# post-deploy-check.sh
+
+echo "🔍 Post-deployment verification..."
+
+# 1. Health checks
+curl -f https://prod.empresa.com/health || exit 1
+
+# 2. Verificar módulos
+ssh user@prod "cd /opt/liferay && ./check-bundles.sh"
+
+# 3. Testar funcionalidades críticas
+./e2e-tests.sh --env=production --suite=critical
+
+# 4. Verificar logs
+ssh user@prod "tail -n 100 /opt/liferay/logs/liferay.*.log | grep ERROR"
+
+# 5. Métricas
+curl https://monitoring.empresa.com/api/metrics?env=prod
+
+echo "✅ Verification completed!"
+```
+
+## Rollback
+
+### 1. Rollback Rápido
+
+```bash
+#!/bin/bash
+# rollback.sh
+
+BACKUP_DIR=$1
+
+if [ -z "$BACKUP_DIR" ]; then
+  echo "Usage: ./rollback.sh /backups/liferay/20240115_143000"
+  exit 1
+fi
+
+echo "⚠️  Rolling back to $BACKUP_DIR"
+
+# 1. Parar Liferay
+systemctl stop liferay
+
+# 2. Restaurar módulos
+rm -rf /opt/liferay/osgi/modules/*
+cp -r $BACKUP_DIR/modules/* /opt/liferay/osgi/modules/
+
+# 3. Restaurar configs
+rm -rf /opt/liferay/osgi/configs/*
+cp -r $BACKUP_DIR/configs/* /opt/liferay/osgi/configs/
+
+# 4. Restaurar banco (se necessário)
+# mysql -u liferay -p liferay_prod < $BACKUP_DIR/database.sql
+
+# 5. Reiniciar Liferay
+systemctl start liferay
+
+# 6. Verificar
+tail -f /opt/liferay/logs/liferay.*.log
+
+echo "✅ Rollback completed!"
+```
+
+### 2. Rollback Blue-Green
+
+```bash
+# Simplesmente voltar tráfego para Blue
+aws elb modify-listener \
+  --load-balancer-name my-lb \
+  --listener-port 443 \
+  --new-target-group blue-tg
+
+echo "✅ Traffic switched back to Blue"
+```
+
+### 3. Rollback Git
+
+```bash
+# Reverter commit
+git revert HEAD
+
+# Ou reset (CUIDADO!)
+git reset --hard HEAD~1
+
+# Deploy versão anterior
+git checkout v1.1.0
+./deploy.sh
+```
+
+## Estratégias de Deploy
+
+### Rolling Deploy
+
+```bash
+# Deploy em lotes de servidores
+
+# Lote 1 (2 servidores)
+deploy_to_servers server1 server2
+wait_health_check server1 server2
+
+# Lote 2 (2 servidores)
+deploy_to_servers server3 server4
+wait_health_check server3 server4
+
+# Lote 3 (restante)
+deploy_to_servers server5 server6 server7
+wait_health_check server5 server6 server7
+```
+
+### Feature Flags
+
+```javascript
+// Habilitar feature gradualmente
+const featureFlags = {
+  newCheckout: {
+    enabled: process.env.NEW_CHECKOUT_ENABLED === "true",
+    rolloutPercentage: 20, // 20% dos usuários
+  },
+};
+
+function isFeatureEnabled(userId, feature) {
+  const flag = featureFlags[feature];
+
+  if (!flag.enabled) return false;
+
+  // Hash do userId para determinar rollout
+  const hash = hashUserId(userId);
+  return hash % 100 < flag.rolloutPercentage;
+}
+
+// Uso
+if (isFeatureEnabled(user.id, "newCheckout")) {
+  return <NewCheckout />;
+} else {
+  return <OldCheckout />;
+}
+```
+
+## Monitoramento
+
+### 1. Logs
+
+```bash
+# Logs em tempo real
+tail -f $LIFERAY_HOME/logs/liferay.*.log
+
+# Filtrar erros
+tail -f $LIFERAY_HOME/logs/liferay.*.log | grep ERROR
+
+# Últimos 100 erros
+grep ERROR $LIFERAY_HOME/logs/liferay.*.log | tail -n 100
+
+# Análise de logs
+cat $LIFERAY_HOME/logs/liferay.*.log | \
+  grep -E "(ERROR|WARN)" | \
+  awk '{print $1, $2, $3}' | \
+  sort | uniq -c | sort -nr
+```
+
+### 2. Métricas
+
+```javascript
+// Instrumentação de código
+const prometheus = require("prom-client");
+
+const deployCounter = new prometheus.Counter({
+  name: "deployments_total",
+  help: "Total number of deployments",
+  labelNames: ["environment", "status"],
+});
+
+const deployDuration = new prometheus.Histogram({
+  name: "deployment_duration_seconds",
+  help: "Deployment duration in seconds",
+  labelNames: ["environment"],
+});
+
+// Registrar deploy
+function recordDeploy(env, status, duration) {
+  deployCounter.inc({ environment: env, status });
+  deployDuration.observe({ environment: env }, duration);
+}
+```
+
+### 3. Alertas
+
+```yaml
+# Prometheus alerting rules
+groups:
+  - name: liferay
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        annotations:
+          summary: "High error rate detected"
+
+      - alert: DeploymentFailed
+        expr: deployments_total{status="failed"} > 0
+        annotations:
+          summary: "Deployment failed in {{ $labels.environment }}"
+```
+
+## Automação CI/CD
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+          ./gradlew build
+
+      - name: Deploy to Staging
+        run: ./scripts/deploy-staging.sh
+
+      - name: Smoke Tests
+        run: ./scripts/smoke-tests.sh
+
+  deploy-production:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Backup Production
+        run: ./scripts/backup-prod.sh
+
+      - name: Build
+        run: |
+          npm ci
+          npm run build:prod
+          ./gradlew clean build -Pprofile=production
+
+      - name: Deploy to Production
+        run: ./scripts/deploy-prod.sh
+
+      - name: Post-Deploy Checks
+        run: ./scripts/post-deploy-check.sh
+
+      - name: Rollback on Failure
+        if: failure()
+        run: ./scripts/rollback.sh
+```
+
+### GitLab CI
+
+```yaml
+# .gitlab-ci.yml
+stages:
+  - build
+  - deploy-staging
+  - deploy-production
+
+build:
+  stage: build
+  script:
+    - npm ci
+    - npm run build
+    - ./gradlew build
+  artifacts:
+    paths:
+      - modules/*/build/libs/
+      - client-extensions/*/build/
+
+deploy-staging:
+  stage: deploy-staging
+  script:
+    - ./scripts/deploy-staging.sh
+  only:
+    - main
+  environment:
+    name: staging
+    url: https://staging.empresa.com
+
+deploy-production:
+  stage: deploy-production
+  script:
+    - ./scripts/backup-prod.sh
+    - ./scripts/deploy-prod.sh
+    - ./scripts/post-deploy-check.sh
+  only:
+    - tags
+  when: manual
+  environment:
+    name: production
+    url: https://empresa.com
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+  ### Recomendações - **Sempre fazer backup**: Antes de qualquer deploy em
+  produção - **Deploy incremental**: Blue-Green ou Canary - **Smoke tests**:
+  Sempre após deploy - **Monitoramento**: Logs, métricas e alertas - **Rollback
+  rápido**: Plano de rollback testado - **Documentar**: Registrar todos os
+  deploys - **Janela de manutenção**: Deploy em horários de baixo tráfego -
+  **Comunicação**: Avisar stakeholders sobre deploys
+</Callout>
+
+## Troubleshooting
+
+### Deploy Falha
+
+```bash
+# Verificar logs
+tail -f $LIFERAY_HOME/logs/liferay.*.log
+
+# Verificar permissões
+ls -la $LIFERAY_HOME/deploy/
+
+# Limpar cache OSGi
+rm -rf $LIFERAY_HOME/osgi/state/*
+
+# Reiniciar Liferay
+systemctl restart liferay
+```
+
+### Módulo Não Instala
+
+```bash
+# Verificar bundle
+unzip -l módulo.jar | grep MANIFEST
+
+# Verificar dependências no Gogo Shell
+lb | grep dependência
+
+# Forçar refresh
+refresh 123  # ID do bundle
+```
+
+## Recursos Relacionados
+
+- [CI/CD Workflow](/docs/workflows/ci-cd)
+- [Development Workflow](/docs/workflows/development-workflow)
+- [Liferay Deployment](https://learn.liferay.com/w/dxp/installation-and-upgrades)
+
+---
+
+**Deploy seguro e confiável!** Backup, monitoramento e rollback garantem estabilidade.

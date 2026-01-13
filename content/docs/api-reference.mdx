@@ -1,0 +1,688 @@
+---
+title: API Reference
+description: Referência completa da API do SEA CLI
+---
+
+# API Reference
+
+Documentação técnica da API do SEA CLI para uso programático e integração.
+
+## Instalação
+
+```bash
+npm install @sea/cli --save-dev
+```
+
+## Uso Básico
+
+### Como Módulo
+
+```javascript
+const { SeaCLI } = require("@sea/cli");
+
+const cli = new SeaCLI({
+  cwd: process.cwd(),
+  verbose: true,
+});
+
+// Inicializar projeto
+await cli.init({
+  workspace: "liferay-workspace",
+  type: "gradle",
+});
+```
+
+## Core API
+
+### SeaCLI
+
+Classe principal do SEA CLI.
+
+```typescript
+class SeaCLI {
+  constructor(options?: SeaCLIOptions);
+
+  // Comandos
+  init(options: InitOptions): Promise<void>;
+  createWorkspace(options: CreateWorkspaceOptions): Promise<void>;
+  setup(options: SetupOptions): Promise<void>;
+  createModule(options: CreateModuleOptions): Promise<void>;
+  createClientExtension(options: CreateClientExtensionOptions): Promise<void>;
+
+  // Utilidades
+  getVersion(): string;
+  getConfig(): SeaConfig;
+  setConfig(config: Partial<SeaConfig>): void;
+}
+```
+
+#### Constructor
+
+```typescript
+interface SeaCLIOptions {
+  cwd?: string; // Diretório de trabalho
+  verbose?: boolean; // Modo verbose
+  silent?: boolean; // Modo silencioso
+  dryRun?: boolean; // Simulação (não executa)
+}
+
+const cli = new SeaCLI({
+  cwd: "/path/to/project",
+  verbose: true,
+});
+```
+
+### init()
+
+Inicializa ferramentas de qualidade em projeto existente.
+
+```typescript
+interface InitOptions {
+  eslint?: boolean; // Instalar ESLint
+  prettier?: boolean; // Instalar Prettier
+  jest?: boolean; // Instalar Jest
+  husky?: boolean; // Instalar Husky
+  sonar?: boolean; // Configurar SonarQube
+  force?: boolean; // Sobrescrever arquivos existentes
+  template?: string; // Template customizado
+}
+
+// Exemplo
+await cli.init({
+  eslint: true,
+  prettier: true,
+  jest: true,
+  husky: true,
+  force: false,
+});
+```
+
+### createWorkspace()
+
+Cria novo workspace Liferay.
+
+```typescript
+interface CreateWorkspaceOptions {
+  name: string; // Nome do workspace
+  type: "gradle" | "turbo"; // Tipo do workspace
+  liferayVersion?: string; // Versão do Liferay
+  javaVersion?: string; // Versão do Java
+  includeQuality?: boolean; // Incluir ferramentas de qualidade
+}
+
+// Exemplo
+await cli.createWorkspace({
+  name: "meu-workspace",
+  type: "gradle",
+  liferayVersion: "7.4",
+  includeQuality: true,
+});
+```
+
+### setup()
+
+Configura workspace existente.
+
+```typescript
+interface SetupOptions {
+  path?: string; // Caminho do workspace
+  configure?: string[]; // O que configurar ['eslint', 'prettier', etc]
+  skipInstall?: boolean; // Pular instalação de dependências
+}
+
+// Exemplo
+await cli.setup({
+  path: "./liferay-workspace",
+  configure: ["eslint", "prettier", "jest"],
+  skipInstall: false,
+});
+```
+
+### createModule()
+
+Cria novo módulo Liferay.
+
+```typescript
+interface CreateModuleOptions {
+  name: string; // Nome do módulo
+  type: ModuleType; // Tipo do módulo
+  package?: string; // Pacote Java
+  className?: string; // Nome da classe
+}
+
+type ModuleType =
+  | "mvc-portlet"
+  | "service-builder"
+  | "service-wrapper"
+  | "theme"
+  | "fragment"
+  | "control-panel-entry";
+
+// Exemplo
+await cli.createModule({
+  name: "produto-portlet",
+  type: "mvc-portlet",
+  package: "com.sea.produto",
+  className: "ProdutoPortlet",
+});
+```
+
+### createClientExtension()
+
+Cria Client Extension.
+
+```typescript
+interface CreateClientExtensionOptions {
+  name: string; // Nome do client extension
+  type: ClientExtensionType; // Tipo
+  framework?: string; // Framework (react, vue, etc)
+  typescript?: boolean; // Usar TypeScript
+}
+
+type ClientExtensionType =
+  | "customElement"
+  | "themeCSS"
+  | "themeFavicon"
+  | "globalCSS"
+  | "globalJS";
+
+// Exemplo
+await cli.createClientExtension({
+  name: "catalogo-ce",
+  type: "customElement",
+  framework: "react",
+  typescript: true,
+});
+```
+
+## Configuration API
+
+### getConfig()
+
+Obtém configuração atual.
+
+```typescript
+interface SeaConfig {
+  version: string;
+  workspace: {
+    type: "gradle" | "turbo";
+    name: string;
+    path: string;
+  };
+  tools: {
+    eslint: boolean;
+    prettier: boolean;
+    jest: boolean;
+    husky: boolean;
+    sonar: boolean;
+  };
+  templates: {
+    path: string;
+    custom: string[];
+  };
+}
+
+const config = cli.getConfig();
+console.log(config.workspace.type); // 'gradle'
+```
+
+### setConfig()
+
+Atualiza configuração.
+
+```typescript
+cli.setConfig({
+  tools: {
+    eslint: true,
+    prettier: true,
+  },
+});
+```
+
+## Template API
+
+### TemplateEngine
+
+Motor de templates do SEA CLI.
+
+```typescript
+class TemplateEngine {
+  constructor(options?: TemplateEngineOptions);
+
+  render(template: string, variables: Record<string, any>): string;
+  renderFile(path: string, variables: Record<string, any>): Promise<string>;
+  registerHelper(name: string, fn: Function): void;
+}
+```
+
+#### Exemplo de Uso
+
+```typescript
+const { TemplateEngine } = require("@sea/cli");
+
+const engine = new TemplateEngine();
+
+// Registrar helper customizado
+engine.registerHelper("uppercase", (str) => str.toUpperCase());
+
+// Renderizar template
+const result = engine.render("Hello {{uppercase name}}!", { name: "world" });
+console.log(result); // 'Hello WORLD!'
+```
+
+## File System API
+
+### FileManager
+
+Gerenciador de arquivos.
+
+```typescript
+class FileManager {
+  static exists(path: string): Promise<boolean>;
+  static read(path: string): Promise<string>;
+  static write(path: string, content: string): Promise<void>;
+  static copy(source: string, dest: string): Promise<void>;
+  static remove(path: string): Promise<void>;
+  static ensureDir(path: string): Promise<void>;
+}
+```
+
+#### Exemplo
+
+```typescript
+const { FileManager } = require("@sea/cli");
+
+// Verificar se existe
+const exists = await FileManager.exists(".eslintrc.js");
+
+// Ler arquivo
+const content = await FileManager.read(".eslintrc.js");
+
+// Escrever arquivo
+await FileManager.write(".prettierrc", JSON.stringify({ semi: true }));
+
+// Copiar arquivo
+await FileManager.copy("template/.eslintrc.js", ".eslintrc.js");
+```
+
+## Process API
+
+### ProcessRunner
+
+Executor de processos.
+
+```typescript
+class ProcessRunner {
+  static run(command: string, options?: RunOptions): Promise<ProcessResult>;
+  static spawn(
+    command: string,
+    args: string[],
+    options?: SpawnOptions
+  ): Promise<void>;
+}
+
+interface RunOptions {
+  cwd?: string;
+  env?: Record<string, string>;
+  silent?: boolean;
+  throwOnError?: boolean;
+}
+
+interface ProcessResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+}
+```
+
+#### Exemplo
+
+```typescript
+const { ProcessRunner } = require("@sea/cli");
+
+// Executar comando
+const result = await ProcessRunner.run("npm install", {
+  cwd: "./my-package",
+  silent: false,
+});
+
+console.log(result.stdout);
+console.log(result.exitCode); // 0 se sucesso
+```
+
+## Logger API
+
+### Logger
+
+Sistema de logs.
+
+```typescript
+class Logger {
+  static info(message: string, ...args: any[]): void;
+  static success(message: string, ...args: any[]): void;
+  static warn(message: string, ...args: any[]): void;
+  static error(message: string, ...args: any[]): void;
+  static debug(message: string, ...args: any[]): void;
+
+  static setLevel(level: LogLevel): void;
+  static setVerbose(verbose: boolean): void;
+}
+
+type LogLevel = "debug" | "info" | "warn" | "error";
+```
+
+#### Exemplo
+
+```typescript
+const { Logger } = require("@sea/cli");
+
+Logger.setVerbose(true);
+
+Logger.info("Starting process...");
+Logger.success("✅ Process completed!");
+Logger.warn("⚠️  Warning: deprecated feature");
+Logger.error("❌ Error occurred");
+Logger.debug("Debug information");
+```
+
+## Validation API
+
+### Validator
+
+Validador de entradas.
+
+```typescript
+class Validator {
+  static validateProjectName(name: string): ValidationResult;
+  static validatePackageName(name: string): ValidationResult;
+  static validatePath(path: string): ValidationResult;
+  static validateVersion(version: string): ValidationResult;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+```
+
+#### Exemplo
+
+```typescript
+const { Validator } = require("@sea/cli");
+
+const result = Validator.validateProjectName("meu-projeto");
+
+if (result.valid) {
+  console.log("✅ Valid project name");
+} else {
+  console.error("❌ Invalid project name:", result.errors);
+}
+```
+
+## Plugin API
+
+### Plugin System
+
+Sistema de plugins extensível.
+
+```typescript
+interface SeaPlugin {
+  name: string;
+  version: string;
+  apply(cli: SeaCLI): void;
+}
+
+class PluginManager {
+  static register(plugin: SeaPlugin): void;
+  static unregister(pluginName: string): void;
+  static list(): SeaPlugin[];
+}
+```
+
+#### Criar Plugin
+
+```typescript
+// meu-plugin.js
+module.exports = {
+  name: "meu-plugin",
+  version: "1.0.0",
+
+  apply(cli) {
+    // Adicionar comando customizado
+    cli.registerCommand("custom", async (options) => {
+      console.log("Executando comando customizado!");
+    });
+
+    // Hook em evento
+    cli.on("init:before", () => {
+      console.log("Antes de inicializar...");
+    });
+
+    cli.on("init:after", () => {
+      console.log("Após inicializar...");
+    });
+  },
+};
+```
+
+#### Usar Plugin
+
+```typescript
+const { SeaCLI, PluginManager } = require("@sea/cli");
+const meuPlugin = require("./meu-plugin");
+
+// Registrar plugin
+PluginManager.register(meuPlugin);
+
+// Usar CLI com plugin
+const cli = new SeaCLI();
+await cli.custom({
+  /* options */
+});
+```
+
+## Events API
+
+### Event Emitter
+
+Sistema de eventos.
+
+```typescript
+class SeaCLI extends EventEmitter {
+  // Eventos disponíveis
+  on(event: "init:before", listener: () => void): this;
+  on(event: "init:after", listener: () => void): this;
+  on(event: "create:before", listener: (type: string) => void): this;
+  on(event: "create:after", listener: (type: string) => void): this;
+  on(event: "error", listener: (error: Error) => void): this;
+}
+```
+
+#### Exemplo
+
+```typescript
+const { SeaCLI } = require("@sea/cli");
+
+const cli = new SeaCLI();
+
+cli.on("init:before", () => {
+  console.log("Iniciando...");
+});
+
+cli.on("init:after", () => {
+  console.log("Concluído!");
+});
+
+cli.on("error", (error) => {
+  console.error("Erro:", error.message);
+});
+
+await cli.init({ eslint: true });
+```
+
+## TypeScript Types
+
+### Definições de Tipos
+
+```typescript
+// @sea/cli/types
+
+export interface SeaCLIOptions {
+  cwd?: string;
+  verbose?: boolean;
+  silent?: boolean;
+  dryRun?: boolean;
+}
+
+export interface InitOptions {
+  eslint?: boolean;
+  prettier?: boolean;
+  jest?: boolean;
+  husky?: boolean;
+  sonar?: boolean;
+  force?: boolean;
+  template?: string;
+}
+
+export interface CreateWorkspaceOptions {
+  name: string;
+  type: "gradle" | "turbo";
+  liferayVersion?: string;
+  javaVersion?: string;
+  includeQuality?: boolean;
+}
+
+export type ModuleType =
+  | "mvc-portlet"
+  | "service-builder"
+  | "service-wrapper"
+  | "theme"
+  | "fragment"
+  | "control-panel-entry";
+
+export type ClientExtensionType =
+  | "customElement"
+  | "themeCSS"
+  | "themeFavicon"
+  | "globalCSS"
+  | "globalJS";
+```
+
+## Exemplo Completo
+
+### Script de Automação
+
+```typescript
+import { SeaCLI, Logger, FileManager } from "@sea/cli";
+
+async function setupProject() {
+  Logger.info("🚀 Starting project setup...");
+
+  const cli = new SeaCLI({
+    cwd: process.cwd(),
+    verbose: true,
+  });
+
+  try {
+    // 1. Criar workspace
+    Logger.info("📦 Creating workspace...");
+    await cli.createWorkspace({
+      name: "meu-projeto",
+      type: "turbo",
+      liferayVersion: "7.4",
+      includeQuality: true,
+    });
+
+    // 2. Criar módulo
+    Logger.info("🔧 Creating module...");
+    await cli.createModule({
+      name: "produto-portlet",
+      type: "mvc-portlet",
+      package: "com.sea.produto",
+    });
+
+    // 3. Criar client extension
+    Logger.info("⚛️  Creating client extension...");
+    await cli.createClientExtension({
+      name: "catalogo-ce",
+      type: "customElement",
+      framework: "react",
+      typescript: true,
+    });
+
+    // 4. Configurar qualidade
+    Logger.info("✨ Setting up quality tools...");
+    await cli.setup({
+      configure: ["eslint", "prettier", "jest", "husky"],
+    });
+
+    Logger.success("✅ Project setup completed!");
+  } catch (error) {
+    Logger.error("❌ Setup failed:", error);
+    throw error;
+  }
+}
+
+setupProject();
+```
+
+## Error Handling
+
+### Tipos de Erros
+
+```typescript
+class SeaError extends Error {
+  code: string;
+  details?: any;
+}
+
+// Códigos de erro
+const ErrorCodes = {
+  INVALID_CONFIG: "INVALID_CONFIG",
+  FILE_NOT_FOUND: "FILE_NOT_FOUND",
+  COMMAND_FAILED: "COMMAND_FAILED",
+  TEMPLATE_ERROR: "TEMPLATE_ERROR",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+};
+```
+
+### Tratamento
+
+```typescript
+try {
+  await cli.init({ eslint: true });
+} catch (error) {
+  if (error instanceof SeaError) {
+    switch (error.code) {
+      case ErrorCodes.INVALID_CONFIG:
+        console.error("Configuração inválida:", error.details);
+        break;
+      case ErrorCodes.FILE_NOT_FOUND:
+        console.error("Arquivo não encontrado:", error.details);
+        break;
+      default:
+        console.error("Erro:", error.message);
+    }
+  }
+}
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+  ### Recomendações - **Type Safety**: Use TypeScript para melhor DX - **Error
+  Handling**: Sempre trate erros adequadamente - **Logging**: Use Logger ao
+  invés de console.log - **Async/Await**: Prefira async/await sobre Promises -
+  **Validação**: Valide inputs antes de processar - **Cleanup**: Limpe recursos
+  em caso de erro
+</Callout>
+
+## Recursos Relacionados
+
+- [CLI Reference](/docs/cli-reference)
+- [Custom Templates](/docs/advanced/custom-templates)
+- [Examples](https://github.com/sea-tecnologia/sea-cli/tree/main/examples)
+
+---
+
+**API programática para automação completa!** 🔧

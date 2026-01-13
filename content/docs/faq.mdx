@@ -1,0 +1,698 @@
+---
+title: FAQ - Perguntas Frequentes
+description: Respostas para as dúvidas mais comuns sobre o SEA CLI
+---
+
+# Perguntas Frequentes
+
+Respostas para as dúvidas mais comuns sobre instalação, configuração e uso do SEA CLI.
+
+## Instalação e Setup
+
+### O SEA CLI funciona com qual versão do Node.js?
+
+O SEA CLI requer **Node.js 16.0.0 ou superior**. Recomendamos usar a versão LTS mais recente.
+
+```bash
+# Verificar versão
+node --version
+
+# Atualizar Node (usando nvm)
+nvm install --lts
+nvm use --lts
+```
+
+### Posso usar npm, yarn ou pnpm?
+
+Sim! O SEA CLI é compatível com todos os gerenciadores de pacotes:
+
+```bash
+# npm
+npm install -g @sea/cli
+
+# yarn
+yarn global add @sea/cli
+
+# pnpm
+pnpm add -g @sea/cli
+```
+
+### O comando `sea` não é reconhecido após instalação
+
+**Possíveis causas:**
+
+1. **Instalação local vs global**:
+
+   ```bash
+   # Instalar globalmente
+   npm install -g @sea/cli
+
+   # OU usar via npx
+   npx @sea/cli init
+   ```
+
+2. **PATH não configurado**:
+
+   ```bash
+   # Verificar PATH
+   echo $PATH
+
+   # Adicionar ao PATH (bash)
+   echo 'export PATH="$PATH:$(npm bin -g)"' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+
+3. **Permissões npm (Linux/Mac)**:
+   ```bash
+   # Corrigir permissões
+   sudo chown -R $(whoami) ~/.npm
+   sudo chown -R $(whoami) /usr/local/lib/node_modules
+   ```
+
+### Erro: EACCES ao instalar globalmente
+
+Use uma das soluções:
+
+**Opção 1: Usar npx (recomendado)**
+
+```bash
+npx @sea/cli init
+```
+
+**Opção 2: Configurar npm prefix**
+
+```bash
+mkdir ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+npm install -g @sea/cli
+```
+
+**Opção 3: Usar sudo (não recomendado)**
+
+```bash
+sudo npm install -g @sea/cli
+```
+
+## Configuração
+
+### Posso customizar as regras do ESLint?
+
+Sim! Após executar `sea init`, edite o arquivo `.eslintrc.js`:
+
+```javascript
+module.exports = {
+  // Configuração padrão do SEA CLI
+  extends: ["eslint:recommended", "plugin:react/recommended", "prettier"],
+
+  // Adicione suas regras customizadas
+  rules: {
+    "no-console": "warn",
+    "prefer-const": "error",
+    // suas regras...
+  },
+};
+```
+
+### Como desabilitar uma ferramenta específica?
+
+Use flags ao executar `sea init`:
+
+```bash
+# Apenas ESLint e Prettier
+sea init --eslint --prettier
+
+# Sem Husky
+sea init --no-husky
+
+# Configuração mínima
+sea init --eslint
+```
+
+### Posso usar o SEA CLI em projeto existente?
+
+Sim! O SEA CLI foi projetado para isso:
+
+```bash
+cd meu-projeto-existente
+sea init
+```
+
+Use `--force` para sobrescrever arquivos existentes:
+
+```bash
+sea init --force
+```
+
+### Como integrar com monorepo existente?
+
+```bash
+# Na raiz do monorepo
+sea setup --workspace existing
+
+# Configurar apenas pacotes específicos
+cd packages/meu-pacote
+sea init
+```
+
+## Workspace e Projetos
+
+### Qual a diferença entre `sea create-workspace` e `sea init`?
+
+- **`sea create-workspace`**: Cria um **novo** workspace Liferay do zero
+- **`sea init`**: Configura ferramentas de qualidade em projeto **existente**
+
+```bash
+# Criar novo projeto
+sea create-workspace meu-workspace
+
+# Configurar projeto existente
+cd projeto-existente
+sea init
+```
+
+### Posso usar Gradle e Turborepo juntos?
+
+Sim! O SEA CLI suporta workspaces híbridos:
+
+```
+liferay-workspace/
+  modules/              # Gradle (módulos Liferay)
+  client-extensions/    # Turborepo (apps frontend)
+    package.json
+    turbo.json
+  build.gradle
+  settings.gradle
+```
+
+```bash
+# Criar workspace híbrido
+sea create-turbo-workspace --liferay
+```
+
+### Como migrar de Gradle para Turborepo?
+
+```bash
+# 1. Criar turbo.json na raiz
+sea create-turbo --existing
+
+# 2. Converter client-extensions
+cd client-extensions
+sea setup --type turbo
+
+# 3. Manter módulos em Gradle
+# (não precisa converter)
+```
+
+## Módulos e Client Extensions
+
+### Erro ao criar módulo: "Gradle not found"
+
+Certifique-se de que o Gradle está instalado:
+
+```bash
+# Verificar Gradle
+gradle --version
+
+# Instalar Gradle (Linux/Mac)
+sdk install gradle
+
+# OU usar wrapper
+./gradlew --version
+```
+
+### Client Extension não carrega no Liferay
+
+**Checklist:**
+
+1. **Build executado:**
+
+   ```bash
+   cd client-extensions/meu-ce
+   npm run build
+   ```
+
+2. **Deploy realizado:**
+
+   ```bash
+   ./gradlew deployClientExtensions
+   ```
+
+3. **Verificar URL em `client-extension.yaml`:**
+
+   ```yaml
+   meu-ce:
+     urls:
+       - "/o/meu-ce/main.js" # Produção
+       # - "http://localhost:3000/main.js"  # Dev
+   ```
+
+4. **Logs do Liferay:**
+   ```bash
+   tail -f $LIFERAY_HOME/logs/liferay.*.log
+   ```
+
+### Como fazer hot reload em Client Extension?
+
+Configure URL de desenvolvimento:
+
+```yaml
+# client-extension.yaml
+meu-ce:
+  urls:
+    - "http://localhost:3000/main.js" # Dev server
+```
+
+```bash
+# Iniciar dev server
+npm run dev
+
+# Em outra aba, watch Liferay
+./gradlew watch
+```
+
+## Testes
+
+### Testes não encontram módulos importados
+
+Configure path aliases no `jest.config.js`:
+
+```javascript
+module.exports = {
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@components/(.*)$": "<rootDir>/src/components/$1",
+  },
+};
+```
+
+E no `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"]
+    }
+  }
+}
+```
+
+### Erro: "Cannot find module 'babel-jest'"
+
+Instale dependências de teste:
+
+```bash
+npm install --save-dev babel-jest @babel/core @babel/preset-env
+```
+
+Configure Babel:
+
+```javascript
+// babel.config.js
+module.exports = {
+  presets: [
+    ["@babel/preset-env", { targets: { node: "current" } }],
+    "@babel/preset-typescript",
+    "@babel/preset-react",
+  ],
+};
+```
+
+### Coverage não atinge threshold
+
+Ajuste thresholds no `jest.config.js`:
+
+```javascript
+module.exports = {
+  coverageThreshold: {
+    global: {
+      branches: 70, // Era 80
+      functions: 70,
+      lines: 70,
+      statements: 70,
+    },
+  },
+};
+```
+
+## Git e Husky
+
+### Hooks do Husky não executam
+
+**Verificar instalação:**
+
+```bash
+# Reinstalar Husky
+npm install --save-dev husky
+npx husky install
+
+# Verificar hooks
+ls -la .husky/
+```
+
+**Permissões:**
+
+```bash
+# Dar permissão de execução
+chmod +x .husky/pre-commit
+chmod +x .husky/commit-msg
+```
+
+**Git hooks path:**
+
+```bash
+# Verificar config
+git config core.hooksPath
+
+# Se diferente de .husky, configurar
+git config core.hooksPath .husky
+```
+
+### Como pular hooks em emergência?
+
+```bash
+# Pular pre-commit
+git commit --no-verify -m "hotfix"
+
+# Pular commit-msg
+git commit -m "WIP" --no-verify
+```
+
+<Callout type="warning">
+  Use `--no-verify` apenas em emergências! Hooks existem para manter qualidade.
+</Callout>
+
+### Commitlint rejeita mensagem válida
+
+Verifique o formato:
+
+```bash
+# ✅ Correto
+git commit -m "feat: adiciona novo componente"
+git commit -m "fix: corrige bug no login"
+
+# ❌ Incorreto
+git commit -m "Adiciona componente"  # Sem tipo
+git commit -m "FEAT: componente"     # Maiúscula
+```
+
+Tipos válidos: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+## ESLint e Prettier
+
+### ESLint e Prettier conflitando
+
+Certifique-se de que está usando `eslint-config-prettier`:
+
+```javascript
+// .eslintrc.js
+module.exports = {
+  extends: [
+    "eslint:recommended",
+    "prettier", // Deve ser o último!
+  ],
+};
+```
+
+### Erro: "Parsing error: Cannot find module '@typescript-eslint/parser'"
+
+Instale dependências TypeScript:
+
+```bash
+npm install --save-dev \
+  @typescript-eslint/parser \
+  @typescript-eslint/eslint-plugin
+```
+
+### Como ignorar arquivos no ESLint?
+
+Crie `.eslintignore`:
+
+```
+node_modules/
+dist/
+build/
+coverage/
+*.min.js
+```
+
+Ou use comentários:
+
+```javascript
+/* eslint-disable */
+// código sem lint
+/* eslint-enable */
+
+// eslint-disable-next-line no-console
+console.log("debug");
+```
+
+## SonarQube
+
+### Como conectar ao SonarQube da empresa?
+
+Configure `sonar-project.properties`:
+
+```properties
+sonar.host.url=https://sonar.empresa.com
+sonar.login=seu-token-aqui
+sonar.projectKey=meu-projeto
+sonar.organization=empresa
+```
+
+Ou via variáveis de ambiente:
+
+```bash
+export SONAR_HOST_URL=https://sonar.empresa.com
+export SONAR_TOKEN=seu-token
+
+npm run sonar
+```
+
+### Erro: "Unauthorized 401"
+
+Gere novo token:
+
+1. SonarQube → My Account → Security → Generate Token
+2. Configure no projeto:
+   ```bash
+   sea sonar --token seu-novo-token
+   ```
+
+### Quality Gate falhou
+
+Verifique problemas:
+
+1. Acesse dashboard do SonarQube
+2. Veja issues por categoria:
+   - **Bugs**: Corrigir primeiro
+   - **Vulnerabilities**: Segurança
+   - **Code Smells**: Melhorias
+   - **Coverage**: Adicionar testes
+
+## Performance
+
+### Build muito lento
+
+**Turborepo cache:**
+
+```bash
+# Habilitar cache remoto
+npx turbo login
+npx turbo link
+
+# Build com cache
+npx turbo run build
+```
+
+**Paralelização:**
+
+```json
+// turbo.json
+{
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    }
+  }
+}
+```
+
+```bash
+# Build paralelo
+turbo run build --concurrency=4
+```
+
+### Muitos arquivos em lint
+
+Use `.eslintignore` e configure `lint-staged`:
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  "*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"],
+
+  // Ignore arquivos grandes
+  "!(*.min).js": "eslint --fix",
+};
+```
+
+### Testes lentos
+
+**Executar em paralelo:**
+
+```json
+// jest.config.js
+{
+  "maxWorkers": "50%"
+}
+```
+
+**Cache do Jest:**
+
+```bash
+# Limpar cache
+jest --clearCache
+
+# Rodar com cache
+jest --cache
+```
+
+## Integração CI/CD
+
+### Como usar no GitHub Actions?
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - run: npm ci
+      - run: npx sea init --ci
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+```
+
+### Como usar no GitLab CI?
+
+```yaml
+# .gitlab-ci.yml
+stages:
+  - quality
+  - test
+  - build
+
+quality:
+  stage: quality
+  script:
+    - npm ci
+    - npx sea init --ci
+    - npm run lint
+```
+
+### Variáveis de ambiente no CI
+
+```bash
+# .env.example
+SONAR_TOKEN=
+LIFERAY_HOST=
+NODE_ENV=production
+```
+
+```yaml
+# GitHub Actions
+env:
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+# GitLab CI
+variables:
+  SONAR_TOKEN: $SONAR_TOKEN
+```
+
+## Troubleshooting Geral
+
+### Como ativar modo debug?
+
+```bash
+# Modo verbose
+sea init --verbose
+
+# Debug completo
+DEBUG=sea:* sea init
+
+# Logs em arquivo
+sea init --verbose > sea-debug.log 2>&1
+```
+
+### Limpar cache do SEA CLI
+
+```bash
+# Limpar cache
+rm -rf ~/.sea/cache
+
+# Reinstalar
+npm uninstall -g @sea/cli
+npm install -g @sea/cli
+```
+
+### Erro estranho após atualização
+
+```bash
+# Limpar tudo
+rm -rf node_modules package-lock.json .turbo .next
+
+# Reinstalar
+npm install
+
+# Rebuild
+npm run build
+```
+
+## Recursos e Suporte
+
+### Onde encontrar mais exemplos?
+
+- [GitHub - Examples](https://github.com/sea-tecnologia/sea-cli/tree/main/examples)
+- [Guides](/docs/guides)
+- [Workflows](/docs/workflows)
+
+### Como reportar bug?
+
+1. Verifique se já foi reportado: [Issues](https://github.com/sea-tecnologia/sea-cli/issues)
+2. Crie novo issue com:
+   - Versão do SEA CLI (`sea --version`)
+   - Versão do Node (`node --version`)
+   - Sistema operacional
+   - Comando executado
+   - Erro completo
+   - Modo debug (`--verbose`)
+
+### Como contribuir?
+
+Veja o [Guia de Contribuição](/docs/contributing)!
+
+### Existe canal de suporte?
+
+- **GitLab Issues**: Para bugs e features
+- **Discord SEA**: Para dúvidas (link interno)
+- **Email**: suporte@seatecnologia.com.br
+
+---
+
+**Não encontrou sua dúvida?** [Abra uma issue](https://gitlab.seatecnologia.com.br/sea-cli/issues) ou entre em contato!

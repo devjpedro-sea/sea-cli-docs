@@ -1,0 +1,724 @@
+---
+title: Estratégias de Monorepo
+description: Padrões avançados para gerenciar monorepos Liferay com Turborepo
+---
+
+# Estratégias de Monorepo
+
+Guia completo de estratégias avançadas para organizar, otimizar e escalar monorepos Liferay usando Turborepo.
+
+## Arquitetura de Monorepo
+
+### Estrutura Recomendada
+
+```
+liferay-workspace/
+  apps/                      # Aplicações completas
+    admin-portal/
+    customer-portal/
+    mobile-app/
+  packages/                  # Pacotes compartilhados
+    ui/                      # Componentes UI
+    utils/                   # Utilidades
+    hooks/                   # Hooks React
+    services/                # Serviços API
+    types/                   # TypeScript types
+  modules/                   # Módulos Liferay
+    produto-portlet/
+    usuario-service/
+  client-extensions/         # Client Extensions
+    catalogo-ce/
+    checkout-ce/
+  configs/                   # Configurações compartilhadas
+    eslint-config/
+    tsconfig/
+    jest-preset/
+  tools/                     # Ferramentas e scripts
+    generators/
+    scripts/
+  docs/                      # Documentação
+  turbo.json
+  package.json
+```
+
+## Organização de Pacotes
+
+### 1. Pacotes por Camada
+
+```
+packages/
+  # Camada de UI
+  ui-components/            # Componentes base
+  ui-patterns/              # Padrões de design
+  ui-theme/                 # Tema e estilos
+
+  # Camada de Lógica
+  business-logic/           # Regras de negócio
+  data-access/              # Acesso a dados
+  state-management/         # Gerenciamento de estado
+
+  # Camada de Infraestrutura
+  api-client/               # Cliente HTTP
+  auth/                     # Autenticação
+  logging/                  # Logs
+  monitoring/               # Monitoramento
+```
+
+### 2. Pacotes por Domínio
+
+```
+packages/
+  # Domínio: Produtos
+  produto-ui/
+  produto-api/
+  produto-types/
+  produto-utils/
+
+  # Domínio: Usuários
+  usuario-ui/
+  usuario-api/
+  usuario-types/
+  usuario-utils/
+
+  # Domínio: Pedidos
+  pedido-ui/
+  pedido-api/
+  pedido-types/
+  pedido-utils/
+```
+
+### 3. Pacotes Compartilhados
+
+```json
+// packages/ui/package.json
+{
+  "name": "@sea/ui",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./button": "./dist/button.js",
+    "./card": "./dist/card.js",
+    "./form": "./dist/form.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src/",
+    "test": "jest"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@sea/tsconfig": "workspace:*",
+    "@sea/eslint-config": "workspace:*",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
+```
+
+## Configurações Compartilhadas
+
+### ESLint Config Compartilhado
+
+```javascript
+// configs/eslint-config/index.js
+module.exports = {
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+  },
+  extends: [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier",
+  ],
+  parser: "@typescript-eslint/parser",
+  parserOptions: {
+    ecmaVersion: "latest",
+    sourceType: "module",
+  },
+  plugins: ["react", "@typescript-eslint", "prettier"],
+  rules: {
+    "prettier/prettier": "error",
+    "no-console": ["warn", { allow: ["warn", "error"] }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        argsIgnorePattern: "^_",
+      },
+    ],
+  },
+};
+```
+
+```json
+// configs/eslint-config/package.json
+{
+  "name": "@sea/eslint-config",
+  "version": "1.0.0",
+  "main": "index.js",
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react": "^7.33.0"
+  }
+}
+```
+
+### TypeScript Config Compartilhado
+
+```json
+// configs/tsconfig/base.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "incremental": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "exclude": ["node_modules", "dist", "build"]
+}
+```
+
+```json
+// configs/tsconfig/react.json
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"]
+  }
+}
+```
+
+```json
+// configs/tsconfig/node.json
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "lib": ["ES2020"],
+    "module": "CommonJS",
+    "types": ["node"]
+  }
+}
+```
+
+### Jest Preset Compartilhado
+
+```javascript
+// configs/jest-preset/jest-preset.js
+module.exports = {
+  testEnvironment: "jsdom",
+  roots: ["<rootDir>/src"],
+  testMatch: [
+    "**/__tests__/**/*.+(ts|tsx|js)",
+    "**/?(*.)+(spec|test).+(ts|tsx|js)",
+  ],
+  transform: {
+    "^.+\\.(ts|tsx)$": [
+      "ts-jest",
+      {
+        tsconfig: "<rootDir>/tsconfig.json",
+      },
+    ],
+  },
+  collectCoverageFrom: [
+    "src/**/*.{js,jsx,ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/**/*.stories.tsx",
+  ],
+  setupFilesAfterEnv: ["<rootDir>/../../configs/jest-preset/setup.ts"],
+  moduleNameMapper: {
+    "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
+};
+```
+
+## Turborepo Avançado
+
+### Pipeline Otimizado
+
+```json
+// turbo.json
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [".env", "tsconfig.json"],
+  "globalEnv": ["NODE_ENV", "CI"],
+  "pipeline": {
+    // Build hierárquico
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "build/**", ".next/**", "!.next/cache/**"],
+      "env": ["NEXT_PUBLIC_API_URL", "LIFERAY_HOST"]
+    },
+
+    // Desenvolvimento paralelo
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+
+    // Lint incremental
+    "lint": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
+    },
+
+    // Testes em paralelo
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "cache": true
+    },
+
+    // Type check rápido
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
+    },
+
+    // Deploy em ordem
+    "deploy": {
+      "dependsOn": ["build", "test", "lint"],
+      "outputs": [],
+      "cache": false
+    },
+
+    // Clean profundo
+    "clean": {
+      "cache": false
+    }
+  }
+}
+```
+
+### Configuração por Workspace
+
+```json
+// apps/admin-portal/turbo.json
+{
+  "extends": ["//"],
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build", "$ADMIN_API_KEY"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": ["NEXT_PUBLIC_ADMIN_API_URL", "ADMIN_API_KEY"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "env": ["NEXT_PUBLIC_ADMIN_API_URL"]
+    }
+  }
+}
+```
+
+## Dependências Internas
+
+### Gerenciamento de Versões
+
+```json
+// package.json raiz
+{
+  "name": "liferay-monorepo",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*", "configs/*"],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "turbo run build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "prettier": "^3.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.0.0"
+  }
+}
+```
+
+### Workspace Protocol
+
+```json
+// packages/produto-ui/package.json
+{
+  "name": "@sea/produto-ui",
+  "version": "1.0.0",
+  "dependencies": {
+    // Dependências internas
+    "@sea/ui": "workspace:*",
+    "@sea/produto-types": "workspace:^",
+    "@sea/produto-api": "workspace:~",
+
+    // Dependências externas
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
+```
+
+## Code Sharing
+
+### Componentes Compartilhados
+
+```typescript
+// packages/ui/src/button/Button.tsx
+import React from "react";
+import type { ButtonProps } from "./types";
+
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = "primary",
+  size = "medium",
+  ...props
+}) => {
+  return (
+    <button className={`btn btn-${variant} btn-${size}`} {...props}>
+      {children}
+    </button>
+  );
+};
+```
+
+```typescript
+// packages/ui/src/index.ts
+export { Button } from "./button/Button";
+export { Card } from "./card/Card";
+export { Input } from "./input/Input";
+export type { ButtonProps } from "./button/types";
+export type { CardProps } from "./card/types";
+```
+
+### Hooks Compartilhados
+
+```typescript
+// packages/hooks/src/useApi.ts
+import { useState, useEffect } from "react";
+import { apiClient } from "@sea/api-client";
+
+export function useApi<T>(endpoint: string) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<T>(endpoint)
+      .then(setData)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [endpoint]);
+
+  return { data, loading, error };
+}
+```
+
+### Utilities Compartilhadas
+
+```typescript
+// packages/utils/src/string.ts
+export function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+export function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-");
+}
+```
+
+## Build Optimization
+
+### Cache Remoto
+
+```bash
+# Configurar Vercel Remote Cache
+npx turbo login
+npx turbo link
+
+# .turbo/config.json
+{
+  "teamId": "team_xxx",
+  "apiUrl": "https://vercel.com/api"
+}
+```
+
+### Parallel Builds
+
+```json
+// package.json
+{
+  "scripts": {
+    // Build paralelo com limite
+    "build": "turbo run build --concurrency=4",
+
+    // Build específico com dependências
+    "build:admin": "turbo run build --filter=admin-portal...",
+
+    // Build sem cache
+    "build:fresh": "turbo run build --force",
+
+    // Build com trace
+    "build:trace": "turbo run build --graph=build-graph.json"
+  }
+}
+```
+
+### Incremental Builds
+
+```json
+// turbo.json
+{
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      // Cache baseado em arquivos específicos
+      "inputs": ["src/**", "!src/**/*.test.ts", "package.json", "tsconfig.json"]
+    }
+  }
+}
+```
+
+## Versionamento
+
+### Changesets
+
+```bash
+# Instalar changesets
+npm install @changesets/cli --save-dev
+npx changeset init
+
+# Criar changeset
+npx changeset
+
+# Aplicar versões
+npx changeset version
+
+# Publicar
+npx changeset publish
+```
+
+### Changeset Config
+
+```json
+// .changeset/config.json
+{
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "linked": [["@sea/ui", "@sea/produto-ui", "@sea/usuario-ui"]],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["@sea/example", "@sea/docs"]
+}
+```
+
+## Scripts Compartilhados
+
+### Generator de Pacotes
+
+```javascript
+// tools/generators/package.js
+const fs = require("fs");
+const path = require("path");
+
+function createPackage(name, type = "lib") {
+  const pkgName = `@sea/${name}`;
+  const pkgDir = path.join(__dirname, "../../packages", name);
+
+  // Criar diretórios
+  fs.mkdirSync(pkgDir, { recursive: true });
+  fs.mkdirSync(path.join(pkgDir, "src"));
+
+  // package.json
+  const packageJson = {
+    name: pkgName,
+    version: "0.0.0",
+    main: "./dist/index.js",
+    types: "./dist/index.d.ts",
+    scripts: {
+      build: "tsup src/index.ts --format cjs,esm --dts",
+      dev: "tsup src/index.ts --format cjs,esm --dts --watch",
+      lint: "eslint src/",
+      test: "jest",
+    },
+    devDependencies: {
+      "@sea/tsconfig": "workspace:*",
+      "@sea/eslint-config": "workspace:*",
+      tsup: "^8.0.0",
+    },
+  };
+
+  fs.writeFileSync(
+    path.join(pkgDir, "package.json"),
+    JSON.stringify(packageJson, null, 2)
+  );
+
+  // tsconfig.json
+  const tsconfig = {
+    extends: "@sea/tsconfig/base.json",
+    include: ["src"],
+    exclude: ["node_modules", "dist"],
+  };
+
+  fs.writeFileSync(
+    path.join(pkgDir, "tsconfig.json"),
+    JSON.stringify(tsconfig, null, 2)
+  );
+
+  // src/index.ts
+  fs.writeFileSync(
+    path.join(pkgDir, "src/index.ts"),
+    `export const name = '${pkgName}';\n`
+  );
+
+  console.log(`✅ Package ${pkgName} created at ${pkgDir}`);
+}
+
+// Uso: node tools/generators/package.js meu-pacote
+const packageName = process.argv[2];
+if (!packageName) {
+  console.error("❌ Usage: node package.js <package-name>");
+  process.exit(1);
+}
+
+createPackage(packageName);
+```
+
+## Estratégias de Deploy
+
+### Deploy Seletivo
+
+```bash
+# Deploy apenas pacotes alterados
+turbo run deploy --filter=[HEAD^1]
+
+# Deploy app específica
+turbo run deploy --filter=admin-portal
+
+# Deploy com dependências
+turbo run deploy --filter=admin-portal...
+```
+
+### CI/CD com Turborepo
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - run: npm ci
+
+      # Build apenas o que mudou
+      - run: npx turbo run build lint test --filter=[HEAD^1]
+
+      # Cache remoto
+      - run: npx turbo run build --cache-dir=.turbo
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+  ### Recomendações - **Granularidade**: Pacotes pequenos e focados -
+  **Dependências**: Minimize dependências entre pacotes - **Versionamento**: Use
+  changesets para versão semântica - **Cache**: Aproveite cache remoto do
+  Turborepo - **Tipos**: Compartilhe tipos TypeScript entre pacotes -
+  **Testes**: Teste cada pacote independentemente - **Documentação**: Documente
+  APIs de pacotes compartilhados - **Build**: Use builds incrementais e
+  paralelos
+</Callout>
+
+## Troubleshooting
+
+### Cache Corrompido
+
+```bash
+# Limpar cache do Turborepo
+turbo run build --force
+
+# Limpar tudo
+rm -rf .turbo node_modules
+npm install
+```
+
+### Dependências Circulares
+
+```bash
+# Detectar ciclos
+npx madge --circular --extensions ts,tsx packages/
+
+# Visualizar grafo
+npx madge --image graph.svg packages/
+```
+
+## Recursos Relacionados
+
+- [Custom Templates](/docs/advanced/custom-templates)
+- [CI/CD Pipeline](/docs/workflows/ci-cd)
+- [Turborepo Configuration](/docs/guides/configure-turborepo)
+
+---
+
+**Monorepos bem estruturados = produtividade maximizada!** 🚀

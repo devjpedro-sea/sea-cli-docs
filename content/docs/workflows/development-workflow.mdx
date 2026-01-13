@@ -1,0 +1,618 @@
+---
+title: Workflow de Desenvolvimento
+description: Fluxo completo de desenvolvimento com SEA CLI
+---
+
+# Workflow de Desenvolvimento
+
+Guia passo a passo do fluxo de desenvolvimento completo usando SEA CLI, desde a criação do projeto até o deploy.
+
+## Visão Geral
+
+O workflow típico com SEA CLI:
+
+1. **Setup**: Criar ou configurar workspace
+2. **Desenvolvimento**: Criar módulos/features
+3. **Qualidade**: Lint, format, test
+4. **Commit**: Pre-commit hooks automáticos
+5. **Review**: Code review e CI/CD
+6. **Deploy**: Deploy em ambiente
+
+## Iniciando Novo Projeto
+
+### 1. Criar Workspace
+
+```bash
+# Criar novo workspace Liferay
+sea-cli create-workspace portal-cliente
+
+# Entrar no workspace
+cd portal-cliente
+```
+
+**O que foi criado:**
+
+- Estrutura Liferay Workspace
+- Configurações ESLint + Prettier
+- Husky + lint-staged
+- Jest configurado
+- Scripts NPM
+
+### 2. Verificar Configurações
+
+```bash
+# Verificar package.json
+cat package.json
+
+# Executar lint
+npm run lint
+
+# Executar testes
+npm test
+
+# Ver estrutura
+tree -L 2
+```
+
+### 3. Inicializar Git
+
+```bash
+# Já inicializado pelo SEA CLI
+git status
+
+# Primeiro commit
+git add .
+git commit -m "chore: initial setup with SEA CLI"
+
+# Adicionar remote
+git remote add origin https://gitlab.com/empresa/portal-cliente.git
+git push -u origin main
+```
+
+## Desenvolvendo Features
+
+### 1. Criar Branch
+
+```bash
+# Criar branch para feature
+git checkout -b feat/lista-produtos
+
+# Ou para bugfix
+git checkout -b fix/corrigir-filtro
+```
+
+### 2. Criar Módulo
+
+```bash
+# Entrar em modules
+cd modules
+
+# Criar módulo via CLI
+sea-cli create-module
+
+# Seleções:
+# - Tipo: MVC Portlet
+# - Nome: produto-portlet
+# - Package: com.empresa.portal.produto
+# - Testes: Y
+```
+
+### 3. Implementar Feature
+
+```javascript
+// modules/produto-portlet/src/components/ProductList.jsx
+import React, { useState, useEffect } from "react";
+
+export default function ProductList() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch("/o/headless-delivery/v1.0/products");
+      const data = await response.json();
+      setProducts(data.items);
+    } catch (error) {
+      console.error("Erro ao carregar produtos:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div>Carregando...</div>;
+
+  return (
+    <div className="product-list">
+      {products.map((product) => (
+        <div key={product.id} className="product-item">
+          <h3>{product.name}</h3>
+          <p>{product.description}</p>
+          <span className="price">R$ {product.price}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### 4. Escrever Testes
+
+```javascript
+// modules/produto-portlet/test/ProductList.test.js
+import { render, screen, waitFor } from "@testing-library/react";
+import ProductList from "../src/components/ProductList";
+
+describe("ProductList", () => {
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it("deve exibir loading inicial", () => {
+    fetch.mockImplementation(() => new Promise(() => {}));
+
+    render(<ProductList />);
+
+    expect(screen.getByText(/carregando/i)).toBeInTheDocument();
+  });
+
+  it("deve carregar e exibir produtos", async () => {
+    const mockProducts = {
+      items: [
+        { id: 1, name: "Produto 1", price: 100 },
+        { id: 2, name: "Produto 2", price: 200 },
+      ],
+    };
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockProducts,
+    });
+
+    render(<ProductList />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Produto 1")).toBeInTheDocument();
+      expect(screen.getByText("Produto 2")).toBeInTheDocument();
+    });
+  });
+
+  it("deve tratar erro ao carregar", async () => {
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+
+    fetch.mockRejectedValueOnce(new Error("API Error"));
+
+    render(<ProductList />);
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Erro ao carregar produtos:",
+        expect.any(Error)
+      );
+    });
+
+    consoleSpy.mockRestore();
+  });
+});
+```
+
+## Ciclo de Qualidade
+
+### 1. Executar Testes
+
+```bash
+# Executar todos os testes
+npm test
+
+# Watch mode durante desenvolvimento
+npm run test:watch
+
+# Com coverage
+npm run test:coverage
+```
+
+### 2. Lint e Format
+
+```bash
+# Lint + format automático
+npm run lint
+
+# Apenas verificar
+npm run lint:check
+
+# Apenas fix
+npm run lint:fix
+
+# Apenas format
+npm run lint:format
+```
+
+### 3. Build Local
+
+```bash
+# Build do módulo
+./gradlew :modules:produto-portlet:build
+
+# Build de todos
+./gradlew build
+
+# Ou com Turbo (se configurado)
+npm run build
+```
+
+## Commit e Push
+
+### 1. Adicionar Mudanças
+
+```bash
+# Ver status
+git status
+
+# Adicionar arquivos
+git add modules/produto-portlet/
+
+# Ou adicionar tudo
+git add .
+```
+
+### 2. Commit (Pre-commit Hook)
+
+```bash
+# Fazer commit
+git commit -m "feat(produto): adicionar lista de produtos"
+
+# Pre-commit hook executa automaticamente:
+# ✓ ESLint --fix
+# ✓ Prettier --write
+# ✓ Jest (testes relacionados)
+```
+
+**Se houver erro:**
+
+```bash
+# Hook falha, corrigir problemas
+npm run lint:fix
+
+# Adicionar correções
+git add .
+
+# Tentar commit novamente
+git commit -m "feat(produto): adicionar lista de produtos"
+```
+
+### 3. Push (Pre-push Hook)
+
+```bash
+# Push para remote
+git push origin feat/lista-produtos
+
+# Pre-push hook executa:
+# ✓ npm test (todos os testes)
+# ✓ npm run build (se configurado)
+```
+
+## Code Review
+
+### 1. Criar Pull/Merge Request
+
+```bash
+# No GitLab/GitHub, criar MR/PR
+# - Base: main
+# - Compare: feat/lista-produtos
+# - Título: feat(produto): adicionar lista de produtos
+# - Descrição: Implementa lista de produtos com filtros
+```
+
+### 2. CI/CD Automático
+
+Pipeline executa:
+
+```yaml
+# .gitlab-ci.yml ou .github/workflows/ci.yml
+stages:
+  - install
+  - quality
+  - test
+  - build
+
+install:
+  - npm ci
+
+lint:
+  - npm run lint:ci
+
+test:
+  - npm run test:ci
+  - npm run test:coverage
+
+build:
+  - npm run build
+  - ./gradlew build
+
+sonar:
+  - sonar-scanner
+```
+
+### 3. Review Checklist
+
+**Revisor verifica:**
+
+- ✅ Testes passando
+- ✅ Coverage adequado (>80%)
+- ✅ Lint/format OK
+- ✅ Código limpo
+- ✅ Documentação atualizada
+- ✅ SonarQube sem issues críticos
+
+### 4. Aprovar e Merge
+
+```bash
+# Após aprovação, fazer merge
+# Squash commits se necessário
+# Delete branch após merge
+```
+
+## Deploy
+
+### 1. Deploy Local (Desenvolvimento)
+
+```bash
+# Build
+./gradlew :modules:produto-portlet:build
+
+# Deploy para Liferay local
+./gradlew :modules:produto-portlet:deploy
+
+# Verificar logs
+tail -f $LIFERAY_HOME/logs/liferay.*.log
+
+# Testar em http://localhost:8080
+```
+
+### 2. Deploy Staging
+
+```bash
+# Após merge para main, CI/CD deploy automático
+
+# Ou manual:
+ssh user@staging-server
+cd /opt/portal-cliente
+git pull origin main
+npm ci
+npm run build
+./gradlew deploy
+```
+
+### 3. Deploy Produção
+
+```bash
+# Via pipeline CD (manual approval)
+# Ou script de deploy:
+
+#!/bin/bash
+# deploy-prod.sh
+
+# Backup
+./scripts/backup.sh
+
+# Deploy
+git pull origin main
+npm ci --production
+npm run build:prod
+./gradlew build deploy
+
+# Smoke tests
+./scripts/smoke-tests.sh
+
+# Rollback se falhar
+if [ $? -ne 0 ]; then
+  ./scripts/rollback.sh
+fi
+```
+
+## Fluxo Completo (Resumo)
+
+```bash
+# 1. SETUP
+sea-cli create-workspace meu-projeto
+cd meu-projeto
+
+# 2. FEATURE BRANCH
+git checkout -b feat/nova-feature
+
+# 3. DESENVOLVER
+cd modules
+sea-cli create-module
+# Implementar código
+# Escrever testes
+
+# 4. QUALIDADE
+npm run lint
+npm test
+npm run test:coverage
+
+# 5. COMMIT
+git add .
+git commit -m "feat: adicionar nova feature"
+# Pre-commit hook: lint + test
+
+# 6. PUSH
+git push origin feat/nova-feature
+# Pre-push hook: test + build
+
+# 7. CODE REVIEW
+# Criar MR/PR
+# CI/CD executa
+# Review e aprovação
+
+# 8. MERGE
+# Merge para main
+# Delete branch
+
+# 9. DEPLOY
+# CI/CD deploy automático
+# Ou manual em produção
+```
+
+## Boas Práticas
+
+### Commits
+
+<Callout type="tip">
+  **Conventional Commits:** - `feat:` nova feature - `fix:` correção de bug -
+  `docs:` documentação - `style:` formatação - `refactor:` refatoração - `test:`
+  adicionar testes - `chore:` manutenção
+</Callout>
+
+```bash
+# Bons exemplos
+git commit -m "feat(produto): adicionar filtro por categoria"
+git commit -m "fix(checkout): corrigir cálculo de frete"
+git commit -m "docs(readme): atualizar instruções de setup"
+git commit -m "test(produto): adicionar testes de integração"
+```
+
+### Branches
+
+```bash
+# Feature
+git checkout -b feat/nome-da-feature
+
+# Bugfix
+git checkout -b fix/corrigir-problema
+
+# Hotfix (produção)
+git checkout -b hotfix/bug-critico
+
+# Release
+git checkout -b release/v1.2.0
+```
+
+### Testes
+
+- ✅ Escrever testes antes/durante desenvolvimento
+- ✅ Coverage mínimo de 80%
+- ✅ Testes unitários + integração
+- ✅ Testar casos de erro
+- ✅ Mock de APIs externas
+
+### Code Review
+
+- ✅ MR/PR pequenos (< 400 linhas)
+- ✅ Descrição clara das mudanças
+- ✅ Screenshots se UI
+- ✅ Checklist de review
+- ✅ Responder comentários
+- ✅ Aprovar apenas se tudo OK
+
+## Troubleshooting
+
+### Pre-commit Hook Falha
+
+```bash
+# Ver o que falhou
+git commit -m "test"
+
+# Corrigir
+npm run lint:fix
+
+# Re-adicionar
+git add .
+
+# Tentar novamente
+git commit -m "test"
+
+# Ou pular (EMERGÊNCIA APENAS)
+git commit -m "test" --no-verify
+```
+
+### Testes Falhando
+
+```bash
+# Ver detalhes
+npm test -- --verbose
+
+# Executar teste específico
+npm test -- ProductList.test.js
+
+# Atualizar snapshots (se necessário)
+npm run test:update
+
+# Debug
+npm run test:debug
+```
+
+### Build Falha
+
+```bash
+# Limpar cache
+./gradlew clean
+rm -rf node_modules .next .turbo
+
+# Reinstalar
+npm ci
+
+# Rebuild
+npm run build
+./gradlew build
+```
+
+### Conflitos de Merge
+
+```bash
+# Atualizar branch
+git checkout feat/minha-feature
+git fetch origin
+git rebase origin/main
+
+# Resolver conflitos
+# Editar arquivos em conflito
+git add .
+git rebase --continue
+
+# Ou abortar
+git rebase --abort
+```
+
+## Ferramentas Úteis
+
+### VS Code Extensions
+
+- **ESLint**: Lint inline
+- **Prettier**: Format on save
+- **Jest Runner**: Run tests inline
+- **GitLens**: Git blame e history
+- **Error Lens**: Erros inline
+
+### Scripts Auxiliares
+
+```json
+{
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:module": "turbo run dev --filter",
+    "check": "npm run lint && npm test",
+    "check:ci": "npm run lint:ci && npm run test:ci",
+    "prepare-commit": "npm run lint:staged",
+    "pre-push": "npm test && npm run build"
+  }
+}
+```
+
+## Recursos Relacionados
+
+- [Testing Workflow](/docs/workflows/testing-workflow)
+- [Deployment Workflow](/docs/workflows/deployment-workflow)
+- [CI/CD](/docs/workflows/ci-cd)
+- [Git Best Practices](https://git-scm.com/book/en/v2)
+
+---
+
+**Desenvolvimento estruturado e eficiente!** Qualidade garantida em cada etapa do workflow.

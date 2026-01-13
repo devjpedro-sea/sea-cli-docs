@@ -1,0 +1,973 @@
+---
+title: CI/CD Pipeline
+description: Integração Contínua e Deploy Contínuo para projetos Liferay
+---
+
+# CI/CD Pipeline
+
+Configuração completa de pipelines CI/CD para projetos Liferay, com automação de build, testes e deploy.
+
+## Visão Geral
+
+### Fluxo CI/CD
+
+```
+Commit → Build → Test → Quality → Deploy
+   ↓       ↓       ↓       ↓        ↓
+ Git → Compile → Unit → Lint → Staging
+         ↓       ↓       ↓        ↓
+       Bundle → E2E → Sonar → Production
+```
+
+### Benefícios
+
+- ✅ **Automação**: Reduz erros manuais
+- ✅ **Velocidade**: Deploy rápido e confiável
+- ✅ **Qualidade**: Testes automáticos
+- ✅ **Rastreabilidade**: Histórico completo
+- ✅ **Rollback**: Fácil reverter mudanças
+
+## GitHub Actions
+
+### 1. Estrutura Básica
+
+```yaml
+# .github/workflows/ci.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "18"
+  JAVA_VERSION: "11"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: |
+          npm run build
+          ./gradlew build
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: |
+            modules/*/build/libs/*.jar
+            client-extensions/*/build/
+```
+
+### 2. Pipeline Completo
+
+```yaml
+# .github/workflows/pipeline.yml
+name: Complete Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Job 1: Lint & Format Check
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier Check
+        run: npm run format:check
+
+      - name: Type Check
+        run: npm run type-check
+
+  # Job 2: Unit Tests
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Run Unit Tests
+        run: npm run test:unit -- --coverage
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+
+  # Job 3: Integration Tests
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      liferay:
+        image: liferay/dxp:latest
+        ports:
+          - 8080:8080
+        options: >-
+          --health-cmd="curl -f http://localhost:8080 || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "11"
+
+      - run: npm ci
+
+      - name: Build Modules
+        run: ./gradlew build
+
+      - name: Deploy to Liferay
+        run: ./gradlew deploy
+        env:
+          LIFERAY_HOST: localhost
+          LIFERAY_PORT: 8080
+
+      - name: Wait for Deploy
+        run: sleep 30
+
+      - name: Run Integration Tests
+        run: npm run test:integration
+
+  # Job 4: E2E Tests
+  test-e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [lint, test-unit]
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Run E2E Tests
+        run: npm run test:e2e
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-results
+          path: test-results/
+
+  # Job 5: SonarQube Analysis
+  sonar:
+    name: SonarQube
+    runs-on: ubuntu-latest
+    needs: [test-unit]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "11"
+
+      - run: npm ci
+      - run: npm run test:unit -- --coverage
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: SonarQube Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Job 6: Build Production
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, test-unit, test-integration, test-e2e, sonar]
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "11"
+
+      - run: npm ci
+
+      - name: Build Production
+        run: |
+          npm run build:prod
+          ./gradlew clean build -Pprofile=production
+
+      - name: Create Release Package
+        run: |
+          mkdir -p release
+          cp -r modules/*/build/libs/*.jar release/
+          cp -r client-extensions/*/build/ release/
+          tar -czf release.tar.gz release/
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-build
+          path: release.tar.gz
+          retention-days: 30
+
+  # Job 7: Deploy Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: staging
+      url: https://staging.empresa.com
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: production-build
+
+      - name: Extract Artifacts
+        run: tar -xzf release.tar.gz
+
+      - name: Deploy to Staging
+        run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          # Deploy
+          rsync -avz --progress release/ \
+            ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/opt/liferay/deploy/
+
+      - name: Run Smoke Tests
+        run: |
+          sleep 30
+          curl -f https://staging.empresa.com/health || exit 1
+
+  # Job 8: Deploy Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: production
+      url: https://empresa.com
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: production-build
+
+      - name: Extract Artifacts
+        run: tar -xzf release.tar.gz
+
+      - name: Backup Production
+        run: |
+          ssh ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} \
+            "bash /opt/scripts/backup-prod.sh"
+
+      - name: Deploy to Production
+        run: |
+          rsync -avz --progress release/ \
+            ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}:/opt/liferay/deploy/
+
+      - name: Post-Deploy Verification
+        run: |
+          sleep 60
+          curl -f https://empresa.com/health || exit 1
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+```
+
+### 3. Workflows Específicos
+
+#### PR Checks
+
+```yaml
+# .github/workflows/pr-checks.yml
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check PR Title
+        run: |
+          title="${{ github.event.pull_request.title }}"
+          if ! echo "$title" | grep -qE "^(feat|fix|docs|style|refactor|test|chore): "; then
+            echo "PR title must follow conventional commits"
+            exit 1
+          fi
+
+      - name: Check Branch Name
+        run: |
+          branch="${{ github.head_ref }}"
+          if ! echo "$branch" | grep -qE "^(feature|bugfix|hotfix|release)/"; then
+            echo "Branch name must start with feature/, bugfix/, hotfix/, or release/"
+            exit 1
+          fi
+```
+
+#### Scheduled Tests
+
+```yaml
+# .github/workflows/nightly.yml
+name: Nightly Tests
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 2 AM UTC
+
+jobs:
+  full-test-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run Full Test Suite
+        run: |
+          npm ci
+          npm run test:all
+
+      - name: Notify on Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: "Nightly tests failed!"
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+```
+
+## GitLab CI
+
+### Pipeline Completo
+
+```yaml
+# .gitlab-ci.yml
+image: node:18
+
+stages:
+  - prepare
+  - lint
+  - test
+  - quality
+  - build
+  - deploy
+
+variables:
+  NODE_ENV: production
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+cache:
+  paths:
+    - node_modules/
+    - .gradle/
+
+# Job: Install dependencies
+install:
+  stage: prepare
+  script:
+    - npm ci
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+
+# Job: Lint
+lint:eslint:
+  stage: lint
+  needs: [install]
+  script:
+    - npm run lint
+
+lint:prettier:
+  stage: lint
+  needs: [install]
+  script:
+    - npm run format:check
+
+# Job: Type check
+typecheck:
+  stage: lint
+  needs: [install]
+  script:
+    - npm run type-check
+
+# Job: Unit tests
+test:unit:
+  stage: test
+  needs: [install]
+  script:
+    - npm run test:unit -- --coverage
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+    expire_in: 1 week
+
+# Job: Integration tests
+test:integration:
+  stage: test
+  needs: [install]
+  services:
+    - name: liferay/dxp:latest
+      alias: liferay
+  script:
+    - npm run test:integration
+  only:
+    - main
+    - develop
+
+# Job: E2E tests
+test:e2e:
+  stage: test
+  needs: [install]
+  image: mcr.microsoft.com/playwright:latest
+  script:
+    - npm run test:e2e
+  artifacts:
+    when: always
+    paths:
+      - test-results/
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+
+# Job: SonarQube
+sonarqube:
+  stage: quality
+  needs: [test:unit]
+  image: sonarsource/sonar-scanner-cli:latest
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - sonar-scanner
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Job: Build
+build:modules:
+  stage: build
+  image: openjdk:11
+  needs: [lint, test:unit]
+  script:
+    - ./gradlew clean build -Pprofile=$CI_ENVIRONMENT_NAME
+  artifacts:
+    paths:
+      - modules/*/build/libs/*.jar
+    expire_in: 1 month
+
+build:client-extensions:
+  stage: build
+  needs: [lint, test:unit]
+  script:
+    - npm run build:prod
+  artifacts:
+    paths:
+      - client-extensions/*/build/
+    expire_in: 1 month
+
+# Job: Deploy Staging
+deploy:staging:
+  stage: deploy
+  needs: [build:modules, build:client-extensions]
+  environment:
+    name: staging
+    url: https://staging.empresa.com
+  before_script:
+    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )"
+    - eval $(ssh-agent -s)
+    - echo "$STAGING_SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - rsync -avz --progress modules/*/build/libs/*.jar $STAGING_USER@$STAGING_HOST:/opt/liferay/deploy/
+    - rsync -avz --progress client-extensions/*/build/ $STAGING_USER@$STAGING_HOST:/opt/liferay/osgi/client-extensions/
+    - sleep 30
+    - curl -f https://staging.empresa.com/health
+  only:
+    - main
+
+# Job: Deploy Production
+deploy:production:
+  stage: deploy
+  needs: [build:modules, build:client-extensions]
+  environment:
+    name: production
+    url: https://empresa.com
+  before_script:
+    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )"
+    - eval $(ssh-agent -s)
+    - echo "$PROD_SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    # Backup
+    - ssh $PROD_USER@$PROD_HOST "bash /opt/scripts/backup-prod.sh"
+    # Deploy
+    - rsync -avz --progress modules/*/build/libs/*.jar $PROD_USER@$PROD_HOST:/opt/liferay/deploy/
+    - rsync -avz --progress client-extensions/*/build/ $PROD_USER@$PROD_HOST:/opt/liferay/osgi/client-extensions/
+    # Verify
+    - sleep 60
+    - curl -f https://empresa.com/health
+  when: manual
+  only:
+    - tags
+```
+
+## Jenkins
+
+### Jenkinsfile
+
+```groovy
+// Jenkinsfile
+pipeline {
+    agent any
+
+    environment {
+        NODE_VERSION = '18'
+        JAVA_VERSION = '11'
+        GRADLE_HOME = tool 'Gradle 7'
+        NODE_HOME = tool 'NodeJS 18'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    export PATH=$NODE_HOME/bin:$PATH
+                    npm ci
+                '''
+            }
+        }
+
+        stage('Lint') {
+            parallel {
+                stage('ESLint') {
+                    steps {
+                        sh 'npm run lint'
+                    }
+                }
+                stage('Prettier') {
+                    steps {
+                        sh 'npm run format:check'
+                    }
+                }
+                stage('TypeCheck') {
+                    steps {
+                        sh 'npm run type-check'
+                    }
+                }
+            }
+        }
+
+        stage('Test') {
+            parallel {
+                stage('Unit Tests') {
+                    steps {
+                        sh 'npm run test:unit -- --coverage'
+                        publishHTML([
+                            reportDir: 'coverage',
+                            reportFiles: 'index.html',
+                            reportName: 'Coverage Report'
+                        ])
+                    }
+                }
+                stage('Integration Tests') {
+                    steps {
+                        sh 'npm run test:integration'
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        sonar-scanner \
+                          -Dsonar.projectKey=sea-project \
+                          -Dsonar.sources=src \
+                          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                    '''
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh '''
+                    export PATH=$NODE_HOME/bin:$GRADLE_HOME/bin:$PATH
+                    npm run build:prod
+                    gradle clean build -Pprofile=production
+                '''
+            }
+        }
+
+        stage('Deploy to Staging') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sshagent(['staging-ssh-key']) {
+                    sh '''
+                        rsync -avz --progress \
+                          modules/*/build/libs/*.jar \
+                          user@staging:/opt/liferay/deploy/
+                    '''
+                }
+                sh 'sleep 30 && curl -f https://staging.empresa.com/health'
+            }
+        }
+
+        stage('Deploy to Production') {
+            when {
+                tag "v*"
+            }
+            input {
+                message "Deploy to Production?"
+                ok "Deploy"
+            }
+            steps {
+                sshagent(['prod-ssh-key']) {
+                    sh '''
+                        # Backup
+                        ssh user@prod "bash /opt/scripts/backup-prod.sh"
+
+                        # Deploy
+                        rsync -avz --progress \
+                          modules/*/build/libs/*.jar \
+                          user@prod:/opt/liferay/deploy/
+                    '''
+                }
+                sh 'sleep 60 && curl -f https://empresa.com/health'
+            }
+        }
+    }
+
+    post {
+        always {
+            junit '**/test-results/**/*.xml'
+            cleanWs()
+        }
+        success {
+            slackSend(
+                color: 'good',
+                message: "Build #${env.BUILD_NUMBER} succeeded!"
+            )
+        }
+        failure {
+            slackSend(
+                color: 'danger',
+                message: "Build #${env.BUILD_NUMBER} failed!"
+            )
+        }
+    }
+}
+```
+
+## Docker Build
+
+### Multi-stage Build
+
+```dockerfile
+# Dockerfile
+# Stage 1: Build
+FROM node:18 AS builder
+
+WORKDIR /app
+
+# Dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Build client extensions
+COPY client-extensions ./client-extensions
+RUN npm run build:prod
+
+# Stage 2: Java build
+FROM gradle:7-jdk11 AS java-builder
+
+WORKDIR /app
+
+COPY modules ./modules
+COPY build.gradle settings.gradle gradle.properties ./
+
+RUN gradle clean build -Pprofile=production
+
+# Stage 3: Runtime
+FROM liferay/dxp:latest
+
+# Copy built artifacts
+COPY --from=builder /app/client-extensions/*/build/ \
+     /opt/liferay/osgi/client-extensions/
+
+COPY --from=java-builder /app/modules/*/build/libs/*.jar \
+     /opt/liferay/deploy/
+
+EXPOSE 8080
+
+CMD ["catalina.sh", "run"]
+```
+
+### Docker Compose CI
+
+```yaml
+# docker-compose.ci.yml
+version: "3.8"
+
+services:
+  liferay:
+    image: liferay/dxp:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - LIFERAY_MODULE_PERIOD_FRAMEWORK_PERIOD_PROPERTIES_PERIOD_OSGI_PERIOD_CONSOLE=0.0.0.0:11311
+    volumes:
+      - ./deploy:/opt/liferay/deploy
+      - liferay-data:/opt/liferay/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: liferay
+      MYSQL_DATABASE: lportal
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  liferay-data:
+  mysql-data:
+```
+
+## Notificações
+
+### Slack
+
+```yaml
+# .github/workflows/notify.yml
+- name: Notify Slack
+  uses: 8398a7/action-slack@v3
+  with:
+    status: ${{ job.status }}
+    text: |
+      Pipeline: ${{ github.workflow }}
+      Commit: ${{ github.sha }}
+      Author: ${{ github.actor }}
+      Result: ${{ job.status }}
+    webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+  if: always()
+```
+
+### Email
+
+```yaml
+# GitLab CI
+deploy:production:
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" == "success" ]; then
+        echo "Deploy successful!" | mail -s "Production Deploy" team@empresa.com
+      else
+        echo "Deploy failed!" | mail -s "Production Deploy FAILED" team@empresa.com
+      fi
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+  ### Recomendações - **Fail Fast**: Pare pipeline em erros críticos -
+  **Paralelização**: Execute jobs independentes em paralelo - **Cache**: Cache
+  dependências (node_modules, .gradle) - **Artifacts**: Guarde builds por tempo
+  adequado - **Secrets**: Use secrets management (nunca commite credenciais) -
+  **Ambientes**: Separe staging e production - **Aprovação Manual**: Para deploy
+  em produção - **Rollback**: Tenha estratégia de rollback automatizada
+</Callout>
+
+## Métricas
+
+### DORA Metrics
+
+```javascript
+// Deployment Frequency
+const deploymentsPerWeek = countDeployments("production", "week");
+
+// Lead Time for Changes
+const leadTime = calculateLeadTime(commitDate, deployDate);
+
+// Mean Time to Recovery (MTTR)
+const mttr = calculateMTTR(incidentStart, incidentResolved);
+
+// Change Failure Rate
+const failureRate = failedDeployments / totalDeployments;
+```
+
+## Troubleshooting
+
+### Pipeline Lento
+
+```yaml
+# Otimizações
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~/.npm
+      ~/.gradle
+    key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+# Paralelizar jobs
+jobs:
+  test-1:
+    runs-on: ubuntu-latest
+  test-2:
+    runs-on: ubuntu-latest
+    needs: []  # Sem dependências
+```
+
+### Falhas Intermitentes
+
+```yaml
+# Retry em caso de falha
+- uses: nick-invision/retry@v2
+  with:
+    timeout_minutes: 10
+    max_attempts: 3
+    command: npm run test:e2e
+```
+
+## Recursos Relacionados
+
+- [Deployment Workflow](/docs/workflows/deployment-workflow)
+- [Testing Workflow](/docs/workflows/testing-workflow)
+- [GitHub Actions Docs](https://docs.github.com/actions)
+
+---
+
+**CI/CD bem configurado = deploys confiáveis e rápidos!** 🚀

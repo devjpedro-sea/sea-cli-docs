@@ -1,0 +1,729 @@
+---
+title: Scripts de Automação
+description: Scripts NPM prontos para automatizar tarefas de desenvolvimento
+---
+
+# Scripts de Automação
+
+Conjunto completo de scripts NPM configurados automaticamente para automatizar build, deploy, testes e qualidade em projetos Liferay.
+
+## Visão Geral
+
+O SEA CLI adiciona scripts para:
+
+- **Qualidade**: Lint, format, test
+- **Build**: Compilação e bundle
+- **Deploy**: Deploy em Liferay
+- **Desenvolvimento**: Watch, dev server
+- **CI/CD**: Integração contínua
+- **Manutenção**: Clean, update
+
+## Scripts de Qualidade
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "lint": "eslint . --fix && prettier --write .",
+    "lint:check": "eslint . && prettier --check .",
+    "lint:fix": "eslint . --fix",
+    "lint:format": "prettier --write .",
+    "lint:staged": "lint-staged",
+    "lint:ci": "eslint . && prettier --check ."
+  }
+}
+```
+
+### Uso
+
+```bash
+# Lint + format (tudo de uma vez)
+npm run lint
+
+# Apenas verificar (CI)
+npm run lint:check
+
+# Apenas fix ESLint
+npm run lint:fix
+
+# Apenas format Prettier
+npm run lint:format
+
+# Arquivos staged (pre-commit)
+npm run lint:staged
+
+# CI (sem modificar arquivos)
+npm run lint:ci
+```
+
+### Customização
+
+```json
+{
+  "scripts": {
+    "lint:js": "eslint '**/*.{js,jsx}' --fix",
+    "lint:css": "stylelint '**/*.{css,scss}' --fix",
+    "lint:md": "markdownlint '**/*.md' --fix",
+    "lint:all": "npm run lint:js && npm run lint:css && npm run lint:md"
+  }
+}
+```
+
+## Scripts de Testes
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "test:changed": "jest --onlyChanged",
+    "test:related": "jest --findRelatedTests",
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "test:update": "jest --updateSnapshot"
+  }
+}
+```
+
+### Uso
+
+```bash
+# Executar todos os testes
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Com coverage
+npm run test:coverage
+
+# Para CI (otimizado)
+npm run test:ci
+
+# Apenas modificados
+npm run test:changed
+
+# Relacionados a arquivo
+npm run test:related src/App.js
+
+# Debug
+npm run test:debug
+
+# Atualizar snapshots
+npm run test:update
+```
+
+### Por Workspace
+
+```json
+{
+  "scripts": {
+    "test:modules": "jest --testPathPattern=modules/",
+    "test:ce": "jest --testPathPattern=client-extensions/",
+    "test:unit": "jest --testPathPattern=\\.test\\.",
+    "test:integration": "jest --testPathPattern=\\.integration\\."
+  }
+}
+```
+
+## Scripts de Build
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "build": "turbo run build",
+    "build:prod": "NODE_ENV=production turbo run build",
+    "build:dev": "NODE_ENV=development turbo run build",
+    "build:watch": "turbo run build --watch",
+    "build:changed": "turbo run build --filter=[HEAD^1]",
+    "build:module": "turbo run build --filter",
+    "build:clean": "turbo run clean && turbo run build"
+  }
+}
+```
+
+### Uso
+
+```bash
+# Build todos os workspaces
+npm run build
+
+# Build produção (otimizado)
+npm run build:prod
+
+# Build desenvolvimento
+npm run build:dev
+
+# Watch mode
+npm run build:watch
+
+# Apenas modificados
+npm run build:changed
+
+# Workspace específico
+npm run build:module -- produto-portlet
+
+# Limpar e rebuildar
+npm run build:clean
+```
+
+### Build Gradle
+
+```json
+{
+  "scripts": {
+    "gradle:build": "./gradlew build",
+    "gradle:deploy": "./gradlew deploy",
+    "gradle:clean": "./gradlew clean",
+    "gradle:assemble": "./gradlew assemble"
+  }
+}
+```
+
+## Scripts de Deploy
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "deploy": "turbo run deploy",
+    "deploy:module": "turbo run deploy --filter",
+    "deploy:ce": "./gradlew deployClientExtensions",
+    "deploy:all": "npm run build && npm run deploy",
+    "deploy:watch": "turbo run deploy --watch"
+  }
+}
+```
+
+### Uso
+
+```bash
+# Deploy todos
+npm run deploy
+
+# Deploy módulo específico
+npm run deploy:module -- produto-portlet
+
+# Deploy client extensions
+npm run deploy:ce
+
+# Build + deploy
+npm run deploy:all
+
+# Watch e deploy automático
+npm run deploy:watch
+```
+
+### Deploy com Gradle
+
+```json
+{
+  "scripts": {
+    "liferay:deploy": "./gradlew deploy",
+    "liferay:start": "./gradlew startBundle",
+    "liferay:stop": "./gradlew stopBundle",
+    "liferay:clean": "./gradlew clean deploy"
+  }
+}
+```
+
+## Scripts de Desenvolvimento
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:module": "turbo run dev --filter",
+    "dev:ce": "webpack serve --mode development",
+    "start": "npm run dev",
+    "serve": "npm run dev"
+  }
+}
+```
+
+### Uso
+
+```bash
+# Dev mode (todos em paralelo)
+npm run dev
+
+# Módulo específico
+npm run dev:module -- catalogo-ce
+
+# Client extension
+npm run dev:ce
+
+# Alias
+npm start
+```
+
+### Hot Reload
+
+```json
+{
+  "scripts": {
+    "hot": "webpack serve --hot --mode development",
+    "watch:build": "webpack --watch --mode development",
+    "watch:test": "jest --watch",
+    "watch:lint": "onchange '**/*.js' -- eslint {{changed}}"
+  }
+}
+```
+
+## Scripts de Manutenção
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "clean": "turbo run clean && rm -rf node_modules",
+    "clean:cache": "rm -rf .turbo node_modules/.cache",
+    "clean:deps": "rm -rf node_modules package-lock.json",
+    "clean:build": "rm -rf build dist .next",
+    "clean:all": "npm run clean && npm run clean:cache",
+    "reinstall": "npm run clean:deps && npm install",
+    "update": "npm update",
+    "update:check": "npm outdated"
+  }
+}
+```
+
+### Uso
+
+```bash
+# Limpar build artifacts
+npm run clean
+
+# Limpar cache
+npm run clean:cache
+
+# Limpar dependências
+npm run clean:deps
+
+# Limpar tudo
+npm run clean:all
+
+# Reinstalar deps
+npm run reinstall
+
+# Atualizar packages
+npm run update
+
+# Ver packages desatualizados
+npm run update:check
+```
+
+## Scripts CI/CD
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "ci": "npm ci",
+    "ci:build": "npm run lint:ci && npm run test:ci && npm run build",
+    "ci:test": "npm run lint:ci && npm run test:ci",
+    "ci:deploy": "npm run ci:build && npm run deploy",
+    "ci:report": "npm run test:coverage && npm run lint:report"
+  }
+}
+```
+
+### Uso
+
+```bash
+# Install para CI (exato do lock)
+npm run ci
+
+# Build completo para CI
+npm run ci:build
+
+# Testes para CI
+npm run ci:test
+
+# Build + deploy CI
+npm run ci:deploy
+
+# Gerar relatórios
+npm run ci:report
+```
+
+### Relatórios
+
+```json
+{
+  "scripts": {
+    "lint:report": "eslint . --format html --output-file reports/eslint.html",
+    "test:report": "jest --coverage --coverageReporters=html",
+    "coverage:upload": "codecov",
+    "sonar": "sonar-scanner"
+  }
+}
+```
+
+## Scripts Compostos
+
+### Sequencial
+
+```json
+{
+  "scripts": {
+    "prebuild": "npm run lint",
+    "build": "webpack --mode production",
+    "postbuild": "npm run test",
+    
+    "full": "npm run clean && npm run lint && npm run test && npm run build"
+  }
+}
+```
+
+Hooks automáticos:
+- `pre*` roda antes
+- `post*` roda depois
+
+```bash
+npm run build
+
+# Executa:
+# 1. npm run prebuild (lint)
+# 2. npm run build (webpack)
+# 3. npm run postbuild (test)
+```
+
+### Paralelo
+
+```json
+{
+  "scripts": {
+    "dev:all": "npm-run-all --parallel dev:*",
+    "dev:api": "nodemon api/server.js",
+    "dev:client": "webpack serve",
+    "dev:watch": "jest --watch"
+  }
+}
+```
+
+```bash
+npm install --save-dev npm-run-all
+
+npm run dev:all
+# Executa dev:api, dev:client, dev:watch em paralelo
+```
+
+## Scripts Úteis
+
+### Informações
+
+```json
+{
+  "scripts": {
+    "info": "npm list --depth=0",
+    "info:outdated": "npm outdated",
+    "info:security": "npm audit",
+    "info:licenses": "license-checker",
+    "size": "size-limit"
+  }
+}
+```
+
+### Geração
+
+```json
+{
+  "scripts": {
+    "docs": "jsdoc -r src/ -d docs/",
+    "docs:serve": "docsify serve docs/",
+    "types": "tsc --declaration --emitDeclarationOnly",
+    "analyze": "webpack-bundle-analyzer build/stats.json"
+  }
+}
+```
+
+### Qualidade
+
+```json
+{
+  "scripts": {
+    "security": "npm audit fix",
+    "security:check": "npm audit",
+    "deps:update": "ncu -u && npm install",
+    "deps:check": "npm-check -u"
+  }
+}
+```
+
+## Scripts Turbo
+
+### package.json (root)
+
+```json
+{
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev --parallel",
+    "clean": "turbo run clean"
+  }
+}
+```
+
+### turbo.json
+
+```json
+{
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["build/**", "dist/**"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}
+```
+
+### Uso com Filtros
+
+```json
+{
+  "scripts": {
+    "build:changed": "turbo run build --filter=[HEAD^1]",
+    "build:modules": "turbo run build --filter=./modules/*",
+    "build:ce": "turbo run build --filter=./client-extensions/*",
+    "test:affected": "turbo run test --filter=[origin/main...HEAD]"
+  }
+}
+```
+
+## Scripts Personalizados
+
+### Liferay Específicos
+
+```json
+{
+  "scripts": {
+    "liferay:init": "blade init",
+    "liferay:create": "blade create",
+    "liferay:gw": "blade gw",
+    "liferay:deploy": "blade deploy",
+    "liferay:watch": "blade watch"
+  }
+}
+```
+
+### Utilitários
+
+```json
+{
+  "scripts": {
+    "format:package": "sort-package-json",
+    "check:deps": "depcheck",
+    "check:circular": "madge --circular src/",
+    "check:duplicates": "jsinspect src/",
+    "backup": "tar -czf backup-$(date +%Y%m%d).tar.gz src/"
+  }
+}
+```
+
+### Helpers
+
+```json
+{
+  "scripts": {
+    "release": "standard-version",
+    "release:major": "standard-version --release-as major",
+    "release:minor": "standard-version --release-as minor",
+    "release:patch": "standard-version --release-as patch",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
+  }
+}
+```
+
+## Variáveis de Ambiente
+
+### .env
+
+```bash
+# .env
+NODE_ENV=development
+LIFERAY_HOST=http://localhost:8080
+API_URL=/o/headless-delivery/v1.0
+DEBUG=true
+```
+
+### Scripts com ENV
+
+```json
+{
+  "scripts": {
+    "dev": "NODE_ENV=development webpack serve",
+    "build": "NODE_ENV=production webpack --mode production",
+    "test": "NODE_ENV=test jest",
+    "start:prod": "NODE_ENV=production node server.js"
+  }
+}
+```
+
+### dotenv
+
+```bash
+npm install --save-dev dotenv dotenv-cli
+```
+
+```json
+{
+  "scripts": {
+    "dev": "dotenv -e .env.development webpack serve",
+    "build": "dotenv -e .env.production webpack",
+    "test": "dotenv -e .env.test jest"
+  }
+}
+```
+
+## Troubleshooting
+
+### Script não encontrado
+
+**Problema:**
+```
+npm ERR! missing script: build
+```
+
+**Solução:**
+```json
+// Verificar package.json
+{
+  "scripts": {
+    "build": "webpack"  // Adicionar script
+  }
+}
+```
+
+### Permissão negada
+
+**Problema:**
+```
+EACCES: permission denied
+```
+
+**Solução:**
+```bash
+# Linux/Mac
+chmod +x scripts/deploy.sh
+
+# Ou usar npx
+npx webpack
+```
+
+### Path não encontrado
+
+**Problema:**
+```
+command not found: webpack
+```
+
+**Solução:**
+```bash
+# Instalar localmente
+npm install --save-dev webpack webpack-cli
+
+# Usar npx
+npx webpack
+
+# Ou adicionar ao PATH
+export PATH="$PATH:./node_modules/.bin"
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Nomes consistentes**: Siga padrão (lint, test, build)
+- **Composição**: Use scripts menores compostos
+- **Documentação**: Comente scripts complexos
+- **Versionamento**: Commit scripts no Git
+- **CI/CD**: Scripts devem funcionar em qualquer ambiente
+- **Erro handling**: Scripts devem falhar corretamente
+</Callout>
+
+### Exemplo Completo
+
+```json
+{
+  "scripts": {
+    // Quality
+    "lint": "eslint . --fix",
+    "lint:check": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    
+    // Tests
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage",
+    
+    // Build
+    "build": "turbo run build",
+    "build:prod": "NODE_ENV=production turbo run build",
+    "build:changed": "turbo run build --filter=[HEAD^1]",
+    
+    // Deploy
+    "deploy": "turbo run deploy",
+    "deploy:all": "npm run build && npm run deploy",
+    
+    // Dev
+    "dev": "turbo run dev --parallel",
+    "start": "npm run dev",
+    
+    // CI/CD
+    "ci": "npm ci",
+    "ci:build": "npm run lint:check && npm run test:ci && npm run build",
+    "ci:deploy": "npm run ci:build && npm run deploy",
+    
+    // Maintenance
+    "clean": "turbo run clean",
+    "clean:all": "npm run clean && rm -rf node_modules",
+    "reinstall": "npm run clean:all && npm install",
+    
+    // Lifecycle
+    "prepare": "husky install",
+    "precommit": "lint-staged",
+    "prepush": "npm run test:changed"
+  }
+}
+```
+
+## Recursos Relacionados
+
+- [npm Scripts Docs](https://docs.npmjs.com/cli/v9/using-npm/scripts)
+- [Turborepo](https://turbo.build/repo/docs)
+- [Husky](/docs/features/husky-lint-staged)
+- [CI/CD](/docs/workflows/ci-cd)
+
+---
+
+**Automatize tudo com scripts NPM!** Qualidade, build, deploy e CI/CD prontos.

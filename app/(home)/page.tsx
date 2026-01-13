@@ -74,7 +74,7 @@ export default function HomePage() {
       </div>
 
       {/* Quick Install */}
-      <div className="max-w-3xl w-full p-6 rounded-lg border border-border bg-card">
+      <div className="max-w-5xl w-full p-6 rounded-lg border border-border bg-card">
         <h2 className="text-2xl font-bold mb-4">Instalação Rápida</h2>
         <div className="text-left">
           <pre className="bg-muted p-4 rounded-lg overflow-x-auto mb-2">

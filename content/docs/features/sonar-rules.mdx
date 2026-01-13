@@ -1,0 +1,775 @@
+---
+title: Regras SonarQube
+description: Integração com SonarQube para análise estática e qualidade de código
+---
+
+# Regras SonarQube
+
+Configuração e integração com SonarQube para análise contínua de qualidade de código, detecção de bugs, vulnerabilidades e code smells.
+
+## Visão Geral
+
+O SEA CLI facilita integração com SonarQube:
+
+- **Análise estática**: Bugs, vulnerabilidades, code smells
+- **Coverage**: Integração com relatórios Jest
+- **Quality Gates**: Thresholds configuráveis
+- **CI/CD**: Análise automática em pipelines
+- **Dashboards**: Métricas visuais
+
+## Configuração
+
+### sonar-project.properties
+
+```properties
+# Identificação do Projeto
+sonar.projectKey=liferay-workspace
+sonar.projectName=Liferay Workspace
+sonar.projectVersion=1.0.0
+
+# Código Fonte
+sonar.sources=modules,client-extensions
+sonar.sourceEncoding=UTF-8
+
+# Exclusões
+sonar.exclusions=\
+  **/node_modules/**,\
+  **/build/**,\
+  **/dist/**,\
+  **/coverage/**,\
+  **/*.test.js,\
+  **/*.spec.js,\
+  **/__tests__/**
+
+# Testes
+sonar.tests=.
+sonar.test.inclusions=\
+  **/*.test.js,\
+  **/*.spec.js,\
+  **/__tests__/**
+
+# Coverage
+sonar.javascript.lcov.reportPaths=coverage/lcov.info
+sonar.coverage.exclusions=\
+  **/*.test.js,\
+  **/*.spec.js,\
+  **/__tests__/**,\
+  **/jest.config.js,\
+  **/webpack.config.js
+
+# ESLint
+sonar.eslint.reportPaths=eslint-report.json
+
+# Language
+sonar.language=js
+sonar.sourceEncoding=UTF-8
+```
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "sonar": "sonar-scanner",
+    "sonar:report": "npm run test:coverage && npm run lint:report && sonar-scanner",
+    "lint:report": "eslint . --format json --output-file eslint-report.json"
+  },
+  "devDependencies": {
+    "sonarqube-scanner": "^3.3.0"
+  }
+}
+```
+
+## Instalação SonarQube Scanner
+
+### Via NPM
+
+```bash
+npm install --save-dev sonarqube-scanner
+```
+
+### Via CLI Global
+
+```bash
+# Linux/Mac
+brew install sonar-scanner
+
+# Windows
+choco install sonarqube-scanner
+
+# Docker
+docker pull sonarqube:lts-community
+```
+
+## Executar Análise
+
+### Local
+
+```bash
+# 1. Gerar coverage e lint report
+npm run test:coverage
+npm run lint:report
+
+# 2. Executar scanner
+npm run sonar
+```
+
+### Com Autenticação
+
+```bash
+sonar-scanner \
+  -Dsonar.projectKey=meu-projeto \
+  -Dsonar.sources=src \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=seu-token-aqui
+```
+
+### Token de Acesso
+
+```bash
+# Gerar token no SonarQube
+# My Account > Security > Generate Tokens
+
+# Usar token
+export SONAR_TOKEN=squ_abc123xyz
+
+sonar-scanner -Dsonar.login=$SONAR_TOKEN
+```
+
+## Métricas
+
+### Principais Métricas
+
+```
+Reliability (Bugs)
+- Blocker: 0
+- Critical: 2
+- Major: 5
+- Minor: 8
+- Info: 12
+
+Security (Vulnerabilities)
+- Blocker: 0
+- Critical: 0
+- Major: 1
+- Minor: 3
+
+Maintainability (Code Smells)
+- Blocker: 0
+- Critical: 3
+- Major: 15
+- Minor: 45
+- Info: 78
+
+Coverage
+- Line Coverage: 85.3%
+- Branch Coverage: 78.2%
+- Overall Coverage: 82.1%
+
+Duplications
+- Duplicated Lines: 2.3%
+- Duplicated Blocks: 45
+```
+
+### Quality Gate
+
+```properties
+# sonar-project.properties
+sonar.qualitygate.wait=true
+sonar.qualitygate.timeout=300
+
+# Thresholds
+sonar.coverage.minimum=80
+sonar.duplications.maximum=3
+sonar.bugs.maximum=0
+sonar.vulnerabilities.maximum=0
+```
+
+## Regras JavaScript
+
+### Bugs
+
+```javascript
+// Blocker: Variável não definida
+function example() {
+  console.log(undefinedVar);  // ❌ ReferenceError
+}
+
+// Solução
+function example() {
+  const undefinedVar = 'value';
+  console.log(undefinedVar);  // ✅
+}
+```
+
+```javascript
+// Critical: Promise sem catch
+async function fetchData() {
+  return fetch('/api/data');  // ❌ Uncaught promise
+}
+
+// Solução
+async function fetchData() {
+  try {
+    return await fetch('/api/data');  // ✅
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+```
+
+### Vulnerabilidades
+
+```javascript
+// Critical: eval() usage
+const code = getUserInput();
+eval(code);  // ❌ Code injection vulnerability
+
+// Solução: Evitar eval()
+const data = JSON.parse(getUserInput());  // ✅
+```
+
+```javascript
+// Major: innerHTML com user input
+element.innerHTML = userInput;  // ❌ XSS vulnerability
+
+// Solução
+element.textContent = userInput;  // ✅
+// OU sanitize
+element.innerHTML = DOMPurify.sanitize(userInput);  // ✅
+```
+
+### Code Smells
+
+```javascript
+// Major: Função muito complexa
+function processOrder(order) {  // ❌ Cognitive Complexity: 25
+  if (order.type === 'online') {
+    if (order.payment === 'card') {
+      if (order.amount > 100) {
+        if (order.user.verified) {
+          // ... 50+ linhas
+        }
+      }
+    }
+  }
+}
+
+// Solução: Quebrar em funções menores
+function processOrder(order) {  // ✅ Complexity: 5
+  validateOrder(order);
+  processPayment(order);
+  shipOrder(order);
+}
+
+function validateOrder(order) {
+  if (!isValidOrder(order)) {
+    throw new Error('Invalid order');
+  }
+}
+```
+
+```javascript
+// Minor: Código duplicado
+function formatUserName(user) {  // ❌ Duplicated
+  return `${user.firstName} ${user.lastName}`.trim();
+}
+
+function formatCustomerName(customer) {  // ❌ Duplicated
+  return `${customer.firstName} ${customer.lastName}`.trim();
+}
+
+// Solução
+function formatFullName(person) {  // ✅ DRY
+  return `${person.firstName} ${person.lastName}`.trim();
+}
+```
+
+## Regras React
+
+### Hooks
+
+```javascript
+// Critical: Hook condicional
+function MyComponent({ condition }) {
+  if (condition) {
+    useState(0);  // ❌ Hook dentro de condição
+  }
+}
+
+// Solução
+function MyComponent({ condition }) {
+  const [value, setValue] = useState(0);  // ✅
+  
+  if (condition) {
+    setValue(1);
+  }
+}
+```
+
+### Props
+
+```javascript
+// Major: PropTypes faltando
+function Product({ name, price }) {  // ❌ No PropTypes
+  return <div>{name}: {price}</div>;
+}
+
+// Solução
+import PropTypes from 'prop-types';
+
+function Product({ name, price }) {  // ✅
+  return <div>{name}: {price}</div>;
+}
+
+Product.propTypes = {
+  name: PropTypes.string.isRequired,
+  price: PropTypes.number.isRequired
+};
+```
+
+### Key em Listas
+
+```javascript
+// Major: Key faltando
+products.map(product => (  // ❌ Missing key
+  <div>{product.name}</div>
+));
+
+// Solução
+products.map(product => (  // ✅
+  <div key={product.id}>{product.name}</div>
+));
+```
+
+## Coverage Integration
+
+### Jest Coverage
+
+```javascript
+// jest.config.js
+module.exports = {
+  collectCoverage: true,
+  collectCoverageFrom: [
+    'src/**/*.{js,jsx}',
+    '!src/**/*.test.{js,jsx}',
+    '!src/**/__tests__/**'
+  ],
+  coverageReporters: [
+    'text',
+    'lcov',        // Para SonarQube
+    'html',
+    'json-summary'
+  ],
+  coverageDirectory: 'coverage'
+};
+```
+
+### Gerar e Enviar
+
+```bash
+# 1. Gerar coverage
+npm run test:coverage
+
+# 2. SonarQube lê coverage/lcov.info
+npm run sonar
+```
+
+### Thresholds
+
+```properties
+# sonar-project.properties
+sonar.coverage.exclusions=\
+  **/*.test.js,\
+  **/__mocks__/**,\
+  **/test-utils/**
+
+# Mínimo coverage
+sonar.typescript.lcov.reportPaths=coverage/lcov.info
+sonar.javascript.lcov.reportPaths=coverage/lcov.info
+```
+
+## ESLint Integration
+
+### Gerar Report
+
+```bash
+# JSON report para SonarQube
+eslint . --format json --output-file eslint-report.json
+```
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "lint:sonar": "eslint . --format json --output-file eslint-report.json",
+    "sonar:full": "npm run test:coverage && npm run lint:sonar && sonar-scanner"
+  }
+}
+```
+
+### Configuração
+
+```properties
+# sonar-project.properties
+sonar.eslint.reportPaths=eslint-report.json
+```
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+name: SonarQube
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sonarqube:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled
+          
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        
+      - name: Run ESLint
+        run: npm run lint:sonar
+        
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          
+      - name: SonarQube Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+```
+
+### GitLab CI
+
+```yaml
+sonarqube:
+  stage: quality
+  image: sonarsource/sonar-scanner-cli:latest
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - npm ci
+    - npm run test:coverage
+    - npm run lint:sonar
+    - sonar-scanner
+  only:
+    - main
+    - merge_requests
+```
+
+### Jenkins
+
+```groovy
+pipeline {
+  agent any
+  
+  stages {
+    stage('Install') {
+      steps {
+        sh 'npm ci'
+      }
+    }
+    
+    stage('Test') {
+      steps {
+        sh 'npm run test:coverage'
+      }
+    }
+    
+    stage('Lint') {
+      steps {
+        sh 'npm run lint:sonar'
+      }
+    }
+    
+    stage('SonarQube') {
+      environment {
+        SONAR_TOKEN = credentials('sonar-token')
+      }
+      steps {
+        withSonarQubeEnv('SonarQube') {
+          sh 'sonar-scanner'
+        }
+      }
+    }
+    
+    stage('Quality Gate') {
+      steps {
+        timeout(time: 5, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+  }
+}
+```
+
+## Análise de Pull Requests
+
+### Configuração
+
+```properties
+# sonar-project.properties
+# Para PR analysis
+sonar.pullrequest.key=${PULL_REQUEST_ID}
+sonar.pullrequest.branch=${BRANCH_NAME}
+sonar.pullrequest.base=${BASE_BRANCH}
+```
+
+### GitHub PR
+
+```yaml
+# .github/workflows/pr-analysis.yml
+name: PR Analysis
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - run: npm ci
+      - run: npm run test:coverage
+      - run: npm run lint:sonar
+      
+      - name: SonarQube PR Analysis
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
+            -Dsonar.pullrequest.branch=${{ github.head_ref }}
+            -Dsonar.pullrequest.base=${{ github.base_ref }}
+```
+
+### Comentários Automáticos
+
+SonarQube pode comentar automaticamente em PRs:
+
+```
+Quality Gate: FAILED
+- Coverage: 75.3% (-4.7%)
+- Bugs: 2 new
+- Code Smells: 8 new
+- Security Hotspots: 1 new
+
+See full analysis: http://sonar.empresa.com/dashboard?id=projeto&pullRequest=123
+```
+
+## Custom Rules
+
+### JavaScript Custom Rule
+
+```javascript
+// custom-rules/no-console-error.js
+module.exports = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'Disallow console.error without tracking'
+    }
+  },
+  create(context) {
+    return {
+      CallExpression(node) {
+        if (
+          node.callee.object?.name === 'console' &&
+          node.callee.property?.name === 'error'
+        ) {
+          context.report({
+            node,
+            message: 'Use error tracking service instead of console.error'
+          });
+        }
+      }
+    };
+  }
+};
+```
+
+### Configurar Custom Rules
+
+```javascript
+// eslint-plugin-custom/index.js
+module.exports = {
+  rules: {
+    'no-console-error': require('./rules/no-console-error')
+  }
+};
+```
+
+```javascript
+// .eslintrc.js
+module.exports = {
+  plugins: ['custom'],
+  rules: {
+    'custom/no-console-error': 'error'
+  }
+};
+```
+
+## Dashboards
+
+### Métricas Principais
+
+Dashboard mostra:
+
+- **Reliability**: Rating A-E, número de bugs
+- **Security**: Rating A-E, vulnerabilidades
+- **Maintainability**: Rating A-E, code smells
+- **Coverage**: %, linhas cobertas/totais
+- **Duplications**: %, linhas duplicadas
+- **Size**: Linhas de código, arquivos
+
+### New Code
+
+Foco em código novo (últimos commits):
+
+```
+New Code (Last 7 days)
+- Lines: 1,234 (+234)
+- Coverage: 82.3% (-2.1%)
+- Bugs: 2 new
+- Code Smells: 15 new
+- Duplications: 1.2%
+```
+
+### Quality Gate Status
+
+```
+✅ PASSED
+
+Conditions:
+✅ Coverage on New Code ≥ 80%: 82.3%
+✅ Duplicated Lines on New Code ≤ 3%: 1.2%
+✅ Maintainability Rating = A
+✅ Reliability Rating = A
+✅ Security Rating = A
+```
+
+## Troubleshooting
+
+### Erro: Coverage not found
+
+**Problema:**
+```
+WARN: Coverage report not found
+```
+
+**Solução:**
+```bash
+# Gerar coverage antes
+npm run test:coverage
+
+# Verificar caminho
+ls -la coverage/lcov.info
+
+# Ajustar sonar-project.properties
+sonar.javascript.lcov.reportPaths=coverage/lcov.info
+```
+
+### Erro: Quality Gate failed
+
+**Problema:**
+```
+ERROR: Quality Gate failed
+```
+
+**Solução:**
+```bash
+# Ver detalhes no dashboard
+# Corrigir issues críticos
+npm run lint:fix
+
+# Aumentar coverage
+npm run test:coverage
+
+# Re-executar
+npm run sonar
+```
+
+### Muitos False Positives
+
+**Problema:**
+Muitos alertas incorretos
+
+**Solução:**
+```javascript
+// Desabilitar regra específica
+/* eslint-disable-next-line sonarjs/cognitive-complexity */
+function complexFunction() {
+  // ...
+}
+
+// OU no arquivo todo
+/* eslint-disable sonarjs/cognitive-complexity */
+```
+
+```properties
+# Ou ajustar threshold
+sonar.javascript.complexity.threshold=20
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Quality Gate rigoroso**: Mantenha alto padrão
+- **Análise em PRs**: Prevenir problemas antes do merge
+- **Coverage > 80%**: Meta mínima de cobertura
+- **Zero bugs críticos**: Sempre corrigir blockers/critical
+- **Monitorar tendências**: Acompanhar evolução das métricas
+- **Code review**: Revisar issues do SonarQube em PRs
+</Callout>
+
+## Recursos Relacionados
+
+- [SonarQube Docs](https://docs.sonarqube.org/)
+- [SonarJS Rules](https://github.com/SonarSource/SonarJS)
+- [ESLint Integration](/docs/features/eslint-prettier)
+- [Testing](/docs/features/testing)
+- [CI/CD](/docs/workflows/ci-cd)
+
+---
+
+**Qualidade contínua com SonarQube!** Análise automática, dashboards e quality gates.

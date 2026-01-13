@@ -1,0 +1,706 @@
+---
+title: Husky + lint-staged
+description: Git hooks automáticos para garantir qualidade antes do commit
+---
+
+# Husky + lint-staged
+
+Configuração automática de Git hooks com Husky e lint-staged para executar lint e testes apenas nos arquivos modificados antes de cada commit.
+
+## Visão Geral
+
+O SEA CLI configura:
+
+- **Husky**: Gerenciador de Git hooks
+- **lint-staged**: Executa comandos apenas em arquivos staged
+- **Pre-commit**: Hook que roda antes do commit
+- **Validações**: Lint, format, tests automáticos
+
+**Benefício**: Impede commits com código com problemas.
+
+## Husky
+
+### O Que É
+
+Husky facilita o uso de Git hooks:
+
+```bash
+# Sem Husky
+.git/hooks/pre-commit  # Script shell manual
+
+# Com Husky
+.husky/pre-commit      # Script versionado
+```
+
+### Instalação Automática
+
+```bash
+# Feito pelo sea-cli
+npx husky install
+npx husky add .husky/pre-commit "npm run lint:staged"
+```
+
+### Estrutura Gerada
+
+```
+.husky/
+├── _/
+│   ├── .gitignore
+│   └── husky.sh
+├── pre-commit
+├── commit-msg        # (opcional)
+└── pre-push          # (opcional)
+```
+
+### Configuração
+
+```json
+// package.json
+{
+  "scripts": {
+    "prepare": "husky install"
+  }
+}
+```
+
+O script `prepare` roda automaticamente após `npm install`.
+
+## lint-staged
+
+### O Que É
+
+Executa comandos apenas em arquivos Git staged (adicionados com `git add`).
+
+### Configuração Gerada
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  '*.{js,jsx,ts,tsx}': [
+    'eslint --fix',
+    'prettier --write',
+    'git add'
+  ],
+  '*.{json,md,yml,yaml}': [
+    'prettier --write',
+    'git add'
+  ],
+  '*.{css,scss}': [
+    'prettier --write',
+    'git add'
+  ],
+  '*.jsp': [
+    'eslint --fix',
+    'git add'
+  ]
+};
+```
+
+### Como Funciona
+
+```bash
+# 1. Você adiciona arquivos
+git add src/App.js src/utils.js
+
+# 2. Você commita
+git commit -m "feat: nova feature"
+
+# 3. Pre-commit hook executa
+# 4. lint-staged identifica arquivos staged
+# 5. Roda comandos apenas nesses arquivos:
+#    - eslint --fix src/App.js src/utils.js
+#    - prettier --write src/App.js src/utils.js
+
+# 6. Se passar, commit acontece
+# 7. Se falhar, commit é cancelado
+```
+
+## Pre-commit Hook
+
+### Arquivo Gerado
+
+```bash
+# .husky/pre-commit
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npm run lint:staged
+```
+
+### Script NPM
+
+```json
+// package.json
+{
+  "scripts": {
+    "lint:staged": "lint-staged"
+  }
+}
+```
+
+### Execução
+
+```bash
+# Ao fazer commit
+git commit -m "feat: add feature"
+
+# Output:
+# ✔ Preparing lint-staged...
+# ⚠ Running tasks for staged files...
+#   ✔ *.{js,jsx,ts,tsx} — 3 files
+#     ✔ eslint --fix
+#     ✔ prettier --write
+#   ✔ *.{json,md} — 1 file
+#     ✔ prettier --write
+# ✔ Applying modifications from tasks...
+# ✔ Cleaning up temporary files...
+```
+
+## Exemplos de Uso
+
+### Commit Normal
+
+```bash
+# Modificar arquivo
+vim src/App.js
+
+# Adicionar ao stage
+git add src/App.js
+
+# Commitar
+git commit -m "feat: add new feature"
+
+# Pre-commit roda automaticamente:
+# - ESLint analisa App.js
+# - Prettier formata App.js
+# - Se OK, commit acontece
+# - Se erro, commit é bloqueado
+```
+
+### Commit com Erro
+
+```bash
+# Modificar com erro
+echo "const x = 1" > src/bug.js  # Sem ponto e vírgula
+
+git add src/bug.js
+git commit -m "test"
+
+# Output:
+# ✖ eslint --fix:
+# src/bug.js
+#   1:11  error  Missing semicolon  semi
+# 
+# ✖ lint-staged failed
+# husky - pre-commit hook exited with code 1 (error)
+
+# Commit bloqueado!
+```
+
+### Corrigir e Commitar
+
+```bash
+# ESLint já corrigiu automaticamente (--fix)
+git add src/bug.js
+git commit -m "test"
+
+# Agora passa!
+# ✔ All tasks passed!
+```
+
+## Configurações Avançadas
+
+### Múltiplos Comandos
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  '*.{js,jsx}': [
+    'eslint --fix',              // 1. Fix lint
+    'prettier --write',          // 2. Format
+    'jest --findRelatedTests',   // 3. Test relacionados
+    'git add'                    // 4. Add fixes
+  ]
+};
+```
+
+### Por Tipo de Arquivo
+
+```javascript
+module.exports = {
+  // JavaScript/TypeScript
+  '*.{js,jsx,ts,tsx}': [
+    'eslint --fix',
+    'prettier --write'
+  ],
+  
+  // Styles
+  '*.{css,scss,less}': [
+    'stylelint --fix',
+    'prettier --write'
+  ],
+  
+  // JSON/YAML
+  '*.{json,yml,yaml}': [
+    'prettier --write'
+  ],
+  
+  // Markdown
+  '*.md': [
+    'markdownlint --fix',
+    'prettier --write'
+  ],
+  
+  // JSP (Liferay)
+  '*.jsp': [
+    'eslint --fix'
+  ]
+};
+```
+
+### Testes Apenas Relacionados
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  '*.{js,jsx}': [
+    'eslint --fix',
+    'prettier --write',
+    // Roda apenas testes relacionados aos arquivos modificados
+    'jest --bail --findRelatedTests --passWithNoTests'
+  ]
+};
+```
+
+### Ignorar Arquivos
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  '*.{js,jsx}': (files) => {
+    // Filtrar arquivos
+    const filtered = files.filter(
+      (file) => !file.includes('generated')
+    );
+    
+    return [
+      `eslint --fix ${filtered.join(' ')}`,
+      `prettier --write ${filtered.join(' ')}`
+    ];
+  }
+};
+```
+
+## Outros Git Hooks
+
+### commit-msg
+
+Valida mensagem de commit:
+
+```bash
+# .husky/commit-msg
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npx --no -- commitlint --edit $1
+```
+
+```javascript
+// commitlint.config.js
+module.exports = {
+  extends: ['@commitlint/config-conventional'],
+  rules: {
+    'type-enum': [2, 'always', [
+      'feat', 'fix', 'docs', 'style', 'refactor',
+      'test', 'chore', 'revert'
+    ]],
+    'subject-case': [2, 'never', ['upper-case']]
+  }
+};
+```
+
+Uso:
+```bash
+git commit -m "feat: add feature"        # ✔ OK
+git commit -m "add feature"              # ✖ Erro: missing type
+git commit -m "FEAT: add feature"        # ✖ Erro: upper case
+```
+
+### pre-push
+
+Executar antes de push:
+
+```bash
+# .husky/pre-push
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npm run test
+npm run build
+```
+
+```bash
+# Ao fazer push
+git push origin main
+
+# Antes de enviar:
+# - Executa todos os testes
+# - Executa build
+# - Se falhar, push é cancelado
+```
+
+### post-commit
+
+Executar após commit bem-sucedido:
+
+```bash
+# .husky/post-commit
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Notificar time
+echo "Commit realizado com sucesso!"
+
+# Atualizar documentação
+npm run docs:generate
+```
+
+## Configuração por Projeto
+
+### Liferay com Gradle
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  // JavaScript/JSP
+  '*.{js,jsx,jsp}': [
+    'eslint --fix',
+    'prettier --write'
+  ],
+  
+  // Java (opcional)
+  '*.java': [
+    'gradle spotlessApply'
+  ],
+  
+  // Groovy (build.gradle)
+  '*.gradle': [
+    'gradle spotlessGroovyApply'
+  ]
+};
+```
+
+### Monorepo com Turborepo
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  '*.{js,jsx,ts,tsx}': [
+    // Usar turbo para lint paralelo
+    'turbo run lint --filter=[HEAD^1]',
+    'prettier --write'
+  ]
+};
+```
+
+### Client Extensions
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  // React/Vue components
+  'client-extensions/**/*.{js,jsx,ts,tsx}': [
+    'eslint --fix',
+    'prettier --write',
+    'jest --findRelatedTests'
+  ],
+  
+  // CSS
+  'client-extensions/**/*.{css,scss}': [
+    'stylelint --fix',
+    'prettier --write'
+  ]
+};
+```
+
+## Troubleshooting
+
+### Hook não executa
+
+**Problema:**
+Pre-commit não roda
+
+**Solução:**
+```bash
+# Reinstalar Husky
+rm -rf .husky
+npx husky install
+npx husky add .husky/pre-commit "npm run lint:staged"
+
+# Verificar permissões
+chmod +x .husky/pre-commit
+
+# Verificar Git hooks path
+git config core.hooksPath
+# Deve retornar: .husky
+```
+
+### lint-staged muito lento
+
+**Problema:**
+Demora muito para commitar
+
+**Solução:**
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  '*.{js,jsx}': [
+    'eslint --fix --max-warnings=0',  // Mais rápido
+    'prettier --write'
+    // Remover jest --findRelatedTests (pode ser lento)
+  ]
+};
+```
+
+Ou use apenas em pre-push:
+```bash
+# .husky/pre-commit - rápido
+npm run lint:staged
+
+# .husky/pre-push - completo
+npm test
+```
+
+### Conflito com IDE
+
+**Problema:**
+IDE formata diferente do pre-commit
+
+**Solução:**
+1. Configure IDE para usar mesmo Prettier/ESLint
+2. Desabilite formatação automática da IDE
+3. Use apenas lint-staged
+
+### Pular hook temporariamente
+
+**Problema:**
+Preciso commitar urgente sem lint
+
+**Solução:**
+```bash
+# Pular pre-commit (NÃO RECOMENDADO)
+git commit -m "fix" --no-verify
+
+# OU
+HUSKY=0 git commit -m "fix"
+```
+
+<Callout type="warning">
+Use `--no-verify` apenas em emergências. Código sem lint pode quebrar build.
+</Callout>
+
+### Erro "git add" deprecated
+
+**Problema:**
+```
+Warning: git add is deprecated in lint-staged
+```
+
+**Solução:**
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  '*.{js,jsx}': [
+    'eslint --fix',
+    'prettier --write'
+    // Remover 'git add' - não é mais necessário
+  ]
+};
+```
+
+lint-staged adiciona automaticamente desde v10+.
+
+## Scripts Úteis
+
+### package.json
+
+```json
+{
+  "scripts": {
+    "lint:staged": "lint-staged",
+    "prepare": "husky install",
+    "husky:install": "husky install && husky add .husky/pre-commit \"npm run lint:staged\"",
+    "test:staged": "jest --bail --findRelatedTests"
+  }
+}
+```
+
+### Lint Manual
+
+```bash
+# Simular pre-commit
+npm run lint:staged
+
+# Ver arquivos que seriam lintados
+git diff --cached --name-only
+
+# Lint arquivos específicos
+npx lint-staged --relative --files src/App.js src/utils.js
+```
+
+## CI/CD
+
+### GitHub Actions
+
+```yaml
+name: Lint Staged
+on: [pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Necessário para lint-staged
+          
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+        with:
+          files: |
+            **/*.js
+            **/*.jsx
+            **/*.ts
+            **/*.tsx
+            
+      - name: Lint changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          npx lint-staged --relative \
+            --files ${{ steps.changed-files.outputs.all_changed_files }}
+```
+
+### Skip CI
+
+```bash
+# Commit que não precisa CI
+git commit -m "docs: update README [skip ci]"
+```
+
+## Métricas
+
+### Ver Estatísticas
+
+```bash
+# Arquivos que passaram por lint
+git log --oneline --grep="lint" | wc -l
+
+# Commits bloqueados (hooks)
+git reflog | grep "commit (amend)" | wc -l
+```
+
+### Tempo de Execução
+
+```javascript
+// .lintstagedrc.js
+const { execSync } = require('child_process');
+
+module.exports = {
+  '*.{js,jsx}': (files) => {
+    const start = Date.now();
+    
+    const commands = [
+      `eslint --fix ${files.join(' ')}`,
+      `prettier --write ${files.join(' ')}`
+    ];
+    
+    return commands.map(cmd => {
+      return () => {
+        execSync(cmd, { stdio: 'inherit' });
+        console.log(`⏱ ${Date.now() - start}ms`);
+      };
+    });
+  }
+};
+```
+
+## Boas Práticas
+
+<Callout type="tip">
+### Recomendações
+- **Sempre use Husky**: Garante qualidade em todo commit
+- **lint-staged rápido**: Apenas arquivos modificados
+- **Testes em pre-push**: Testes completos antes de push
+- **Mensagens claras**: Use commitlint para padrão
+- **Não pule hooks**: Evite `--no-verify`
+- **Configure IDE**: Mesmas regras de lint
+</Callout>
+
+### Workflow Recomendado
+
+```bash
+# 1. Desenvolver
+vim src/feature.js
+
+# 2. Testar localmente
+npm test
+
+# 3. Adicionar ao stage
+git add src/feature.js
+
+# 4. Commit (pre-commit roda automaticamente)
+git commit -m "feat: add feature"
+# ✔ ESLint
+# ✔ Prettier
+# ✔ Commit OK
+
+# 5. Push (pre-push roda testes)
+git push
+# ✔ Tests
+# ✔ Build
+# ✔ Push OK
+```
+
+## Integração com SonarQube
+
+```javascript
+// .lintstagedrc.js
+module.exports = {
+  '*.{js,jsx}': [
+    'eslint --fix --format json --output-file eslint-report.json',
+    'prettier --write'
+  ]
+};
+```
+
+```bash
+# .husky/pre-push
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Enviar métricas para SonarQube
+sonar-scanner \
+  -Dsonar.projectKey=meu-projeto \
+  -Dsonar.sources=src \
+  -Dsonar.eslint.reportPaths=eslint-report.json
+```
+
+## Recursos Relacionados
+
+- [Husky Docs](https://typicode.github.io/husky/)
+- [lint-staged Docs](https://github.com/okonet/lint-staged)
+- [ESLint + Prettier](/docs/features/eslint-prettier)
+- [Testing](/docs/features/testing)
+- [Workflows](/docs/workflows/development-workflow)
+
+---
+
+**Qualidade garantida em cada commit!** Hooks automáticos impedem código problemático.
