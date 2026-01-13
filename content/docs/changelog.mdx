@@ -1,0 +1,380 @@
+---
+title: Changelog
+description: Histórico de versões e mudanças do SEA CLI
+---
+
+# Changelog
+
+Todas as mudanças notáveis no SEA CLI serão documentadas neste arquivo.
+
+O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
+e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
+
+## [Unreleased]
+
+### Em Desenvolvimento
+
+- Suporte a Liferay 7.4 U100+
+- Integração com GitHub Copilot
+- Templates de IA para geração de código
+
+## [2.0.0] - 2026-01-10
+
+### 🎉 Novidades Principais
+
+#### Suporte a Turborepo
+
+- ✨ Novo comando `sea create-turbo-workspace` para monorepos
+- ✨ Configuração automática de Turborepo em projetos existentes
+- ✨ Pipeline otimizado com cache remoto
+- ✨ Build incremental e paralelo
+
+#### Client Extensions Aprimoradas
+
+- ✨ Suporte a frameworks modernos (React 18, Vue 3, Svelte)
+- ✨ Hot reload em desenvolvimento
+- ✨ TypeScript por padrão
+- ✨ Vite como bundler (mais rápido que Webpack)
+
+#### Templates Customizados
+
+- ✨ Sistema de templates personalizáveis
+- ✨ Compartilhamento de templates via Git
+- ✨ Variáveis dinâmicas em templates
+- ✨ Validação automática de templates
+
+### 🚀 Melhorias
+
+- **Performance**: Build 3x mais rápido com cache otimizado
+- **DX**: Mensagens de erro mais claras e acionáveis
+- **CLI**: Modo interativo melhorado com prompts intuitivos
+- **Docs**: Documentação completamente reescrita com exemplos práticos
+
+### 🔧 Mudanças
+
+- **BREAKING**: Node.js 16+ agora é requisito mínimo (era 14+)
+- **BREAKING**: ESLint 8+ obrigatório (removido suporte a v7)
+- **BREAKING**: Prettier 3+ obrigatório (removido suporte a v2)
+- Renomeado `sea workspace` para `sea create-workspace`
+- Comando `sea setup` agora detecta tipo de workspace automaticamente
+
+### 🐛 Correções
+
+- Corrigido erro ao criar módulo com nome contendo hífen
+- Corrigido conflito entre ESLint e Prettier em arquivos TypeScript
+- Corrigido deploy de Client Extensions em Windows
+- Corrigido cache do Turborepo em ambientes CI
+- Corrigido geração de `turbo.json` com dependências circulares
+
+### 📚 Documentação
+
+- Adicionado guia completo de workflows (desenvolvimento, testes, deploy, CI/CD)
+- Adicionado FAQ com 40+ perguntas frequentes
+- Adicionado API Reference completa
+- Adicionado exemplos práticos em todos os guias
+
+### 🗑️ Depreciações
+
+- ⚠️ `sea init --config` será removido em v3.0.0 (use `sea setup` ao invés)
+- ⚠️ Suporte a Gradle 6 será removido em v3.0.0 (use Gradle 7+)
+
+## [1.5.2] - 2025-12-15
+
+### 🐛 Correções
+
+- Corrigido instalação de dependências em monorepos
+- Corrigido geração de `.gitignore` duplicado
+- Corrigido permissões de arquivos Husky no Windows
+
+### 🚀 Melhorias
+
+- Adicionado suporte a pnpm workspace
+- Melhorado detecção de estrutura de projeto
+- Otimizado instalação de dependências (30% mais rápido)
+
+## [1.5.1] - 2025-11-28
+
+### 🐛 Correções
+
+- Corrigido erro ao executar em diretórios com espaços no nome
+- Corrigido configuração do SonarQube em projetos monorepo
+- Corrigido scripts npm em projetos com múltiplos package.json
+
+## [1.5.0] - 2025-11-10
+
+### 🎉 Novidades
+
+- ✨ Comando `sea sonar` para análise de qualidade
+- ✨ Integração com SonarQube/SonarCloud
+- ✨ Configuração automática de quality gates
+- ✨ Relatórios de cobertura integrados
+
+### 🚀 Melhorias
+
+- Adicionado validação de commits (commitlint)
+- Melhorado configuração do Husky
+- Adicionado suporte a conventional commits
+- Otimizado tamanho do pacote npm (50% menor)
+
+### 🐛 Correções
+
+- Corrigido conflito entre lint-staged e prettier
+- Corrigido hooks do Git em repositórios bare
+
+## [1.4.0] - 2025-10-05
+
+### 🎉 Novidades
+
+- ✨ Suporte a TypeScript 5.0+
+- ✨ Novos templates para Jest com React Testing Library
+- ✨ Suporte a Liferay 7.4 U95
+
+### 🚀 Melhorias
+
+- Melhorado configuração do Jest para testes E2E
+- Adicionado suporte a Playwright
+- Atualizado dependências ESLint para v8.50
+
+### 🐛 Correções
+
+- Corrigido path aliases no tsconfig.json
+- Corrigido moduleNameMapper no jest.config.js
+
+## [1.3.0] - 2025-09-01
+
+### 🎉 Novidades
+
+- ✨ Comando `sea create-module` para módulos Liferay
+- ✨ Comando `sea create-client-extension` para Client Extensions
+- ✨ Templates para diferentes tipos de módulos
+
+### 🚀 Melhorias
+
+- Adicionado modo interativo para todos os comandos
+- Melhorado validação de inputs
+- Adicionado progress indicators
+
+### 🐛 Correções
+
+- Corrigido criação de módulos Service Builder
+- Corrigido estrutura de diretórios em workspaces Gradle
+
+## [1.2.0] - 2025-07-20
+
+### 🎉 Novidades
+
+- ✨ Suporte a yarn e pnpm além de npm
+- ✨ Detecção automática de gerenciador de pacotes
+- ✨ Modo `--dry-run` para simular mudanças
+
+### 🚀 Melhorias
+
+- Melhorado performance da CLI (2x mais rápido)
+- Reduzido tamanho de instalação
+- Otimizado resolução de dependências
+
+### 🐛 Correções
+
+- Corrigido instalação de hooks Husky
+- Corrigido configuração Prettier em monorepos
+
+## [1.1.0] - 2025-06-15
+
+### 🎉 Novidades
+
+- ✨ Comando `sea setup` para workspaces existentes
+- ✨ Suporte a configurações compartilhadas
+- ✨ Templates ESLint/Prettier customizáveis
+
+### 🚀 Melhorias
+
+- Adicionado validação de versão Node.js
+- Melhorado mensagens de erro
+- Adicionado modo verbose (`--verbose`)
+
+### 🐛 Correções
+
+- Corrigido conflito entre ESLint configs
+- Corrigido geração de package.json
+
+## [1.0.0] - 2025-05-01
+
+### 🎉 Lançamento Inicial
+
+#### Funcionalidades Principais
+
+- ✅ Inicialização de projetos com `sea init`
+- ✅ Configuração automática de ESLint
+- ✅ Configuração automática de Prettier
+- ✅ Configuração automática de Jest
+- ✅ Configuração automática de Husky
+- ✅ Integração com lint-staged
+- ✅ Suporte a TypeScript
+- ✅ Suporte a React
+- ✅ Templates predefinidos
+
+#### Comandos Disponíveis
+
+- `sea init` - Inicializar ferramentas de qualidade
+- `sea create-workspace` - Criar workspace Liferay
+- `sea --version` - Exibir versão
+- `sea --help` - Exibir ajuda
+
+#### Requisitos
+
+- Node.js 14.0.0+
+- npm 6.0.0+
+- Liferay DXP 7.3+
+
+## [0.9.0-beta] - 2025-04-01
+
+### Beta Release
+
+- 🧪 Testes beta com equipe interna
+- 🧪 Validação de conceitos
+- 🧪 Feedback de usuários
+
+## [0.1.0-alpha] - 2025-02-15
+
+### Alpha Release
+
+- 🚧 Versão experimental inicial
+- 🚧 Prova de conceito
+- 🚧 Desenvolvimento interno
+
+---
+
+## Tipos de Mudanças
+
+- **✨ Novidades** - Novas funcionalidades
+- **🚀 Melhorias** - Melhorias em funcionalidades existentes
+- **🐛 Correções** - Correção de bugs
+- **🔧 Mudanças** - Mudanças que quebram compatibilidade
+- **📚 Documentação** - Mudanças em documentação
+- **🗑️ Depreciações** - Funcionalidades que serão removidas
+- **🔒 Segurança** - Correções de vulnerabilidades
+
+## Versionamento
+
+O SEA CLI segue [Semantic Versioning](https://semver.org/lang/pt-BR/):
+
+- **MAJOR** (X.0.0): Mudanças incompatíveis com versões anteriores
+- **MINOR** (0.X.0): Novas funcionalidades compatíveis
+- **PATCH** (0.0.X): Correções de bugs compatíveis
+
+## Como Atualizar
+
+### Atualização Global
+
+```bash
+# npm
+npm update -g @sea/cli
+
+# yarn
+yarn global upgrade @sea/cli
+
+# pnpm
+pnpm update -g @sea/cli
+
+# Verificar versão
+sea --version
+```
+
+### Atualização em Projeto
+
+```bash
+# npm
+npm update @sea/cli
+
+# yarn
+yarn upgrade @sea/cli
+
+# pnpm
+pnpm update @sea/cli
+```
+
+## Roadmap
+
+### v2.1.0 (Q1 2026)
+
+- [ ] Suporte a Liferay 7.5
+- [ ] Integração com AI code review
+- [ ] Templates para micro-frontends
+- [ ] CLI em modo daemon para performance
+
+### v2.2.0 (Q2 2026)
+
+- [ ] Marketplace de templates
+- [ ] Análise de bundle size
+- [ ] Suporte a Bun
+- [ ] Plugin system estável
+
+### v3.0.0 (Q3 2026)
+
+- [ ] Reescrita em Rust (melhor performance)
+- [ ] Suporte a workspaces federados
+- [ ] Zero-config por padrão
+- [ ] Integração nativa com IDEs
+
+## Suporte de Versões
+
+| Versão | Status           | Lançamento | Fim do Suporte |
+| ------ | ---------------- | ---------- | -------------- |
+| 2.x    | ✅ Ativo         | 2026-01-10 | TBD            |
+| 1.x    | ⚠️ Manutenção    | 2025-05-01 | 2026-07-01     |
+| 0.x    | ❌ Descontinuado | 2025-02-15 | 2025-05-01     |
+
+## Migrações
+
+### De v1.x para v2.x
+
+```bash
+# 1. Atualizar SEA CLI
+npm update -g @sea/cli
+
+# 2. Atualizar dependências do projeto
+npm update eslint prettier jest
+
+# 3. Regenerar configs (opcional)
+sea init --force
+
+# 4. Verificar breaking changes
+sea doctor
+```
+
+### Mudanças que Requerem Ação
+
+#### Node.js 16+
+
+```bash
+# Verificar versão
+node --version
+
+# Atualizar se necessário
+nvm install 16
+nvm use 16
+```
+
+#### ESLint 8+
+
+```bash
+npm install --save-dev eslint@^8.0.0
+```
+
+#### Prettier 3+
+
+```bash
+npm install --save-dev prettier@^3.0.0
+```
+
+## Links Úteis
+
+- [Documentação Completa](/docs)
+- [Guia de Migração](/docs/guides/migration)
+- [Releases no GitHub](https://github.com/sea-tecnologia/sea-cli/releases)
+- [Reportar Bug](https://github.com/sea-tecnologia/sea-cli/issues)
+- [Sugerir Feature](https://github.com/sea-tecnologia/sea-cli/discussions)
+
+---
+
+**Mantenha-se atualizado!** Siga o projeto no [GitHub](https://github.com/sea-tecnologia/sea-cli) para receber notificações de novas versões.
